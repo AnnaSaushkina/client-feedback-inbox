@@ -1,0 +1,61 @@
+{
+  "tasks": [
+    {
+      "id": 1771629417810,
+      "ticket": "2323",
+      "title": "поправить",
+      "description": "",
+      "status": "new",
+      "deadline": null,
+      "createdAt": "2026-02-20T23:16:57.810Z",
+      "files": [
+        {
+          "filename": "1771629417808-image.png",
+          "original": "image.png",
+          "type": "image/png"
+        },
+        {
+          "filename": "1771629417809-image.png",
+          "original": "image.png",
+          "type": "image/png"
+        },
+        {
+          "filename": "1771629417809-image.png",
+          "original": "image.png",
+          "type": "image/png"
+        },
+        {
+          "filename": "1771629417809-image.png",
+          "original": "image.png",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "id": 1771629018779,
+      "ticket": "ккк",
+      "title": "кк",
+      "description": "",
+      "status": "done",
+      "deadline": null,
+      "createdAt": "2026-02-20T23:10:18.779Z",
+      "files": []
+    },
+    {
+      "id": 1771628224674,
+      "ticket": "аа",
+      "title": "ааа",
+      "description": "",
+      "deadline": null,
+      "createdAt": "2026-02-20T22:57:04.674Z",
+      "files": [
+        {
+          "filename": "1771628224670-Ð¡Ð½Ð¸Ð¼Ð¾Ðº.PNG",
+          "original": "Ð¡Ð½Ð¸Ð¼Ð¾Ðº.PNG",
+          "type": "image/png"
+        }
+      ],
+      "status": "done"
+    }
+  ]
+}

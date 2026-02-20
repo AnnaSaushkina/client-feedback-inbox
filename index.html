@@ -1,13 +1,419 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client-feedback-inbox</title>
+    <title>Client Feedback Inbox</title>
+
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --muted: #94a3b8;
+        --border: #334155;
+        --text: #f1f5f9;
+        --accent: #3b82f6;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+      }
+
+      .light {
+        --bg: #f3f6fb;
+        --card: #ffffff;
+        --muted: #64748b;
+        --border: #e2e8f0;
+        --text: #0f172a;
+        --accent: #2563eb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, system-ui;
+        background: var(--bg);
+        color: var(--text);
+        transition: 0.2s;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+        background: var(--card);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      button {
+        background: var(--accent);
+        border: none;
+        color: white;
+        padding: 8px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: 0.15s;
+      }
+
+      button.secondary {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      button:hover {
+        opacity: 0.85;
+      }
+
+      .container {
+        padding: 24px;
+        max-width: 1100px;
+        margin: auto;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .card {
+        background: var(--card);
+        padding: 18px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        transition: 0.2s;
+      }
+
+      .card:hover {
+        transform: translateY(-2px);
+      }
+
+      .topRow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .ticket {
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      .status {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .active {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--warning);
+      }
+      .done {
+        background: rgba(34, 197, 94, 0.15);
+        color: var(--success);
+      }
+
+      .meta {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+
+      .images {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+
+      .images img {
+        width: 140px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+
+      .images img:hover {
+        transform: scale(1.05);
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+      }
+
+      .modal.active {
+        display: flex;
+      }
+
+      .modalCard {
+        background: var(--card);
+        padding: 24px;
+        border-radius: 16px;
+        width: 95%;
+        max-width: 700px;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text);
+        margin-bottom: 10px;
+      }
+
+      textarea {
+        height: 70px;
+        resize: none;
+      }
+
+      .drop {
+        border: 2px dashed var(--border);
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        cursor: pointer;
+        margin-bottom: 12px;
+        color: var(--muted);
+      }
+
+      .preview {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .preview img {
+        width: 120px;
+        border-radius: 10px;
+      }
+
+      .error {
+        font-size: 12px;
+        color: var(--danger);
+        height: 14px;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <header>
+      <div>
+        <button onclick="openCreate()">+ Создать</button>
+        <button class="secondary" onclick="toggleTheme()">Тема</button>
+      </div>
+      <div>
+        <button class="secondary" onclick="switchTab('active')">
+          Активные
+        </button>
+        <button class="secondary" onclick="switchTab('done')">
+          Выполненные
+        </button>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="grid" id="list"></div>
+    </div>
+
+    <div class="modal" id="modal">
+      <div class="modalCard" id="modalContent"></div>
+    </div>
+
+    <script>
+      let tasks = [];
+      let draft = null;
+      let currentTab = "active";
+
+      async function loadTasks() {
+        const res = await fetch("/api/tasks");
+        tasks = await res.json();
+        render();
+      }
+
+      function toggleTheme() {
+        document.body.classList.toggle("light");
+      }
+
+      function switchTab(tab) {
+        currentTab = tab;
+        render();
+      }
+
+      function openCreate() {
+        draft = { files: [] };
+
+        modalContent.innerHTML = `
+<h3>Новая задача</h3>
+
+<input id="ticket" placeholder="Тикет">
+<div class="error" id="ticketErr"></div>
+
+<input id="title" placeholder="Название">
+<div class="error" id="titleErr"></div>
+
+<textarea id="desc" placeholder="Описание"></textarea>
+
+<input type="date" id="deadline">
+
+<select id="assignee">
+<option>Без исполнителя</option>
+<option>Алексей</option>
+<option>Мария</option>
+<option>Иван</option>
+</select>
+
+<div class="drop" id="dropZone">
+Перетащите файл или вставьте Ctrl+V
+</div>
+
+<div class="preview" id="preview"></div>
+
+<button onclick="submitTask()">Создать</button>
+`;
+
+        dropZone.onclick = () => {
+          const input = document.createElement("input");
+          input.type = "file";
+          input.multiple = true;
+          input.onchange = (e) => {
+            draft.files.push(...e.target.files);
+            renderPreview();
+          };
+          input.click();
+        };
+
+        dropZone.ondragover = (e) => e.preventDefault();
+        dropZone.ondrop = (e) => {
+          e.preventDefault();
+          draft.files.push(...e.dataTransfer.files);
+          renderPreview();
+        };
+
+        modal.classList.add("active");
+      }
+
+      document.addEventListener("paste", (e) => {
+        if (!modal.classList.contains("active")) return;
+        for (const item of e.clipboardData.items) {
+          if (item.type.includes("image")) {
+            draft.files.push(item.getAsFile());
+            renderPreview();
+          }
+        }
+      });
+
+      function renderPreview() {
+        preview.innerHTML = "";
+        draft.files.forEach((f) => {
+          if (f.type.includes("image")) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              preview.innerHTML += `<img src="${e.target.result}">`;
+            };
+            reader.readAsDataURL(f);
+          }
+        });
+      }
+
+      async function submitTask() {
+        const ticket = ticket.value.trim();
+        const title = title.value.trim();
+
+        ticketErr.textContent = "";
+        titleErr.textContent = "";
+
+        let ok = true;
+        if (!ticket) {
+          ticketErr.textContent = "Введите тикет";
+          ok = false;
+        }
+        if (!title) {
+          titleErr.textContent = "Введите название";
+          ok = false;
+        }
+        if (!ok) return;
+
+        const form = new FormData();
+        form.append("ticket", ticket);
+        form.append("title", title);
+        form.append("desc", desc.value);
+        form.append("deadline", deadline.value);
+        form.append("assignee", assignee.value);
+        form.append("status", "active");
+
+        draft.files.forEach((f) => form.append("files", f));
+
+        await fetch("/api/tasks", { method: "POST", body: form });
+
+        modal.classList.remove("active");
+        loadTasks();
+      }
+
+      function render() {
+        list.innerHTML = "";
+
+        tasks
+          .filter((t) =>
+            currentTab === "active" ? t.status !== "done" : t.status === "done",
+          )
+          .forEach((t) => {
+            const images = (t.files || [])
+              .filter((f) => f.mimetype && f.mimetype.includes("image"))
+              .map(
+                (f) =>
+                  `<img src="/uploads/${f.filename}" onclick="openImage('/uploads/${f.filename}')">`,
+              )
+              .join("");
+
+            list.innerHTML += `
+<div class="card">
+<div class="topRow">
+<div class="ticket">${t.ticket}</div>
+<div class="status ${t.status === "done" ? "done" : "active"}">
+${t.status === "done" ? "Выполнено" : "В работе"}
+</div>
+</div>
+
+<div><strong>${t.title}</strong></div>
+<div class="meta">
+${t.assignee || "Без исполнителя"} • ${t.deadline || "без дедлайна"}
+</div>
+
+<div class="images">${images}</div>
+</div>
+`;
+          });
+      }
+
+      function openImage(src) {
+        modalContent.innerHTML = `<img src="${src}" style="width:100%;border-radius:14px">`;
+        modal.classList.add("active");
+      }
+
+      modal.onclick = (e) => {
+        if (e.target === modal) modal.classList.remove("active");
+      };
+
+      loadTasks();
+    </script>
   </body>
 </html>
