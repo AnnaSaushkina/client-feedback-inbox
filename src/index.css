@@ -1,5 +1,3 @@
-/* ===== Reset ===== */
-
 *,
 *::before,
 *::after {
@@ -25,7 +23,7 @@ body {
     sans-serif;
 }
 
-/* ===== Compact Popconfirm ===== */
+/* Popconfirm */
 
 .compact-popconfirm .ant-popconfirm-title {
   font-size: 12px;
