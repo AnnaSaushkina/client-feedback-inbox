@@ -1,15 +1,34 @@
-import { taskStore } from "../../state/TaskStore";
+import type { Task } from "../../types/Task";
+import TaskSection from "./TaskSection";
 
-export default function Board() {
+interface BoardProps {
+  activeTasks: Task[];
+  doneTasks: Task[];
+  onDelete: (id: string) => void;
+  onToggle: (id: string) => void;
+}
+
+export default function Board({
+  activeTasks,
+  doneTasks,
+  onDelete,
+  onToggle,
+}: BoardProps) {
   return (
-    <div>
-      <h2>Все задачи:</h2>
+    <div style={{ marginTop: 24 }}>
+      <TaskSection
+        title="Активные задачи"
+        tasks={activeTasks}
+        onDelete={onDelete}
+        onToggle={onToggle}
+      />
 
-      {taskStore.tasks.map((task) => (
-        <div key={task.id}>
-          {task.title} [{task.completed ? "done" : "active"}]
-        </div>
-      ))}
+      <TaskSection
+        title="Выполненные задачи"
+        tasks={doneTasks}
+        onDelete={onDelete}
+        onToggle={onToggle}
+      />
     </div>
   );
 }
