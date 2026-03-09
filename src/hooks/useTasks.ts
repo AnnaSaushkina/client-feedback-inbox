@@ -2,52 +2,40 @@ import { useState, useEffect } from "react";
 import type { Task } from "../types/Task";
 
 export function useTasks() {
+  // Загружаем задачи из браузера при старте
   const [tasks, setTasks] = useState<Task[]>(() => {
-    const stored = localStorage.getItem("tasks");
-
-    if (!stored) return [];
-
-    try {
-      return JSON.parse(stored);
-    } catch {
-      return [];
-    }
+    return JSON.parse(localStorage.getItem("tasks") ?? "[]");
   });
 
+  // Сохраняем в браузер каждый раз когда tasks меняется
   useEffect(() => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
 
   const saveTask = (task: Task) => {
     setTasks((prev) => {
-      const exists = prev.find((t) => t.id === task.id);
-
-      if (exists) {
-        return prev.map((t) => (t.id === task.id ? task : t));
-      }
-
+      const exists = prev.find((item) => item.id === task.id);
+      if (exists)
+        return prev.map((item) => (item.id === task.id ? task : item));
       return [...prev, task];
     });
   };
 
   const deleteTask = (id: string) => {
-    setTasks((prev) => prev.filter((task) => task.id !== id));
+    setTasks((prev) => prev.filter((item) => item.id !== id));
   };
 
   const toggleTask = (id: string) => {
     setTasks((prev) =>
-      prev.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task,
+      prev.map((item) =>
+        item.id === id ? { ...item, completed: !item.completed } : item,
       ),
     );
   };
 
-  const activeTasks = tasks.filter((t) => !t.completed);
-  const doneTasks = tasks.filter((t) => t.completed);
-
   return {
-    activeTasks,
-    doneTasks,
+    activeTasks: tasks.filter((item) => !item.completed),
+    doneTasks: tasks.filter((item) => item.completed),
     saveTask,
     deleteTask,
     toggleTask,
