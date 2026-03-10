@@ -1,36 +1,35 @@
 import { useState, useEffect } from "react";
 import type { Task } from "../types/Task";
+import * as api from "../api/tasks";
 
 export function useTasks() {
-  // Загружаем задачи из браузера при старте
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    return JSON.parse(localStorage.getItem("tasks") ?? "[]");
-  });
+  const [tasks, setTasks] = useState<Task[]>([]);
 
-  // Сохраняем в браузер каждый раз когда tasks меняется
+  // Загружаем задачи с сервера при старте
   useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
+    api.getTasks().then(setTasks);
+  }, []);
 
-  const saveTask = (task: Task) => {
-    setTasks((prev) => {
-      const exists = prev.find((item) => item.id === task.id);
-      if (exists)
-        return prev.map((item) => (item.id === task.id ? task : item));
-      return [...prev, task];
-    });
+  const saveTask = async (task: Task) => {
+    const exists = tasks.find((t) => t.id === task.id);
+
+    if (exists) {
+      const updated = await api.updateTask(task);
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? updated : t)));
+    } else {
+      const created = await api.createTask(task);
+      setTasks((prev) => [...prev, created]);
+    }
   };
 
-  const deleteTask = (id: string) => {
+  const deleteTask = async (id: string) => {
+    await api.deleteTask(id);
     setTasks((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const toggleTask = (id: string) => {
-    setTasks((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, completed: !item.completed } : item,
-      ),
-    );
+  const toggleTask = async (id: string) => {
+    const updated = await api.toggleTask(id);
+    setTasks((prev) => prev.map((item) => (item.id === id ? updated : item)));
   };
 
   return {
