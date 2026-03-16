@@ -1,17 +1,20 @@
-export const getDeadlineColor = (deadline?: string) => {
+const HOURS_IN_DAY = 24;
+const MS_IN_HOUR = 1000 * 60 * 60;
+
+export const getDeadlineColor = (deadline?: string): string => {
   if (!deadline) return "purple";
-  const now = new Date();
-  const date = new Date(deadline);
-  const diffHours = (date.getTime() - now.getTime()) / (1000 * 60 * 60);
-  if (diffHours < 0) return "red";
-  if (diffHours < 24) return "orange";
-  return "purple";
+
+  const hoursLeft = (new Date(deadline).getTime() - Date.now()) / MS_IN_HOUR;
+
+  if (hoursLeft < 0) return "red"; // просрочен
+  if (hoursLeft < HOURS_IN_DAY) return "orange"; // горит
+  return "purple"; // ок
 };
 
-export const formatDeadline = (deadline?: string) => {
+export const formatDeadline = (deadline?: string): string | null => {
   if (!deadline) return null;
-  const date = new Date(deadline);
-  return date.toLocaleString("ru", {
+
+  return new Date(deadline).toLocaleString("ru", {
     weekday: "short",
     day: "numeric",
     month: "numeric",

@@ -1,106 +1,87 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useTasks } from "../hooks/useTasks";
-import type { Task } from "../types/Task";
 
-vi.mock("../api/tasks", () => ({
-  getTasks: async () => [],
-  createTask: async (task: Task) => ({ ...task, completed: false }),
-  deleteTask: async () => {},
-  toggleTask: async (id: string) => ({ id, completed: true, title: "" }),
-  updateTask: async (task: Task) => task,
-}));
+// очистка хранилища перед каждым тестом
+beforeEach(() => localStorage.clear());
+
+// только обязательные поля
+const bugFixTask = {
+  id: "1",
+  title: "Починить форму логина",
+  completed: false,
+};
 
 describe("useTasks", () => {
-  it("начинает с пустого списка", async () => {
+  it("начинает с пустого списка если localStorage пустой", () => {
     const { result } = renderHook(() => useTasks());
     expect(result.current.activeTasks).toEqual([]);
     expect(result.current.doneTasks).toEqual([]);
   });
 
-  it("добавляет задачу", async () => {
+  it("добавляет задачу в активные", () => {
     const { result } = renderHook(() => useTasks());
 
-    await act(async () => {
-      await result.current.saveTask({
-        id: "1",
-        title: "Тестовая задача",
-        completed: false,
-      });
+    act(() => {
+      result.current.addTask(bugFixTask);
     });
 
     expect(result.current.activeTasks).toHaveLength(1);
-    expect(result.current.activeTasks[0].title).toBe("Тестовая задача");
+    expect(result.current.activeTasks[0].title).toBe("Починить форму логина");
   });
 
-  it("удаляет задачу", async () => {
+  it("удаляет задачу из списка", () => {
     const { result } = renderHook(() => useTasks());
 
-    await act(async () => {
-      await result.current.saveTask({
-        id: "1",
-        title: "Задача",
-        completed: false,
-      });
+    act(() => {
+      result.current.addTask(bugFixTask);
     });
-
-    await act(async () => {
-      await result.current.deleteTask("1");
+    act(() => {
+      result.current.deleteTask("1");
     });
 
     expect(result.current.activeTasks).toHaveLength(0);
   });
 
-  it("переключает статус задачи", async () => {
+  it("перемещает задачу в выполненные после toggle", () => {
     const { result } = renderHook(() => useTasks());
 
-    await act(async () => {
-      await result.current.saveTask({
-        id: "1",
-        title: "Задача",
-        completed: false,
-      });
+    act(() => {
+      result.current.addTask(bugFixTask);
     });
-
-    await act(async () => {
-      await result.current.toggleTask("1");
+    act(() => {
+      result.current.toggleTask("1");
     });
 
     expect(result.current.doneTasks).toHaveLength(1);
     expect(result.current.activeTasks).toHaveLength(0);
   });
 
-  it("редактирование обновляет задачу а не создаёт новую", async () => {
+  it("обновляет существующую задачу а не создаёт дубль", () => {
     const { result } = renderHook(() => useTasks());
 
-    await act(async () => {
-      await result.current.saveTask({
-        id: "1",
-        title: "Старое название",
-        completed: false,
-      });
+    act(() => {
+      result.current.addTask(bugFixTask);
     });
-
-    await act(async () => {
-      await result.current.saveTask({
-        id: "1",
-        title: "Новое название",
-        completed: false,
+    act(() => {
+      result.current.updateTask({
+        ...bugFixTask,
+        title: "Починить форму регистрации",
       });
     });
 
     expect(result.current.activeTasks).toHaveLength(1);
-    expect(result.current.activeTasks[0].title).toBe("Новое название");
+    expect(result.current.activeTasks[0].title).toBe(
+      "Починить форму регистрации",
+    );
   });
 
-  it("сохраняет приоритет и исполнителя", async () => {
+  it("сохраняет все поля задачи — приоритет и исполнителя", () => {
     const { result } = renderHook(() => useTasks());
 
-    await act(async () => {
-      await result.current.saveTask({
-        id: "1",
-        title: "Задача",
-        completed: false,
+    act(() => {
+      result.current.addTask({
+        ...bugFixTask,
         priority: "high",
         assignee: "Аня",
       });

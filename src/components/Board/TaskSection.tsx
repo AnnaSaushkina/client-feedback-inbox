@@ -10,15 +10,19 @@ interface TaskSectionProps {
   onOpen: (task: Task) => void;
 }
 
-const isTomorrow = (deadline?: string) => {
+// Проверяем, что дедлайн задачи — завтра
+const isTomorrow = (deadline?: string): boolean => {
   if (!deadline) return false;
+
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const d = new Date(deadline);
+
+  const taskDate = new Date(deadline);
+
   return (
-    d.getDate() === tomorrow.getDate() &&
-    d.getMonth() === tomorrow.getMonth() &&
-    d.getFullYear() === tomorrow.getFullYear()
+    taskDate.getDate() === tomorrow.getDate() &&
+    taskDate.getMonth() === tomorrow.getMonth() &&
+    taskDate.getFullYear() === tomorrow.getFullYear()
   );
 };
 
@@ -42,10 +46,16 @@ export default function TaskSection({
     />
   );
 
+  if (tasks.length === 0) {
+    return (
+      <Card title={title} style={{ marginBottom: 16 }}>
+        <p>Список пуст</p>
+      </Card>
+    );
+  }
+
   return (
     <Card title={title} style={{ marginBottom: 16 }}>
-      {tasks.length === 0 && <p>Список пуст</p>}
-
       {tomorrowTasks.length > 0 && (
         <>
           <p style={{ color: "#888", fontSize: 12, margin: "8px 0 4px" }}>
@@ -54,7 +64,6 @@ export default function TaskSection({
           <List dataSource={tomorrowTasks} renderItem={renderTask} />
         </>
       )}
-
       {otherTasks.length > 0 && (
         <List dataSource={otherTasks} renderItem={renderTask} />
       )}

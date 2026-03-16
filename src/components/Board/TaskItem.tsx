@@ -5,8 +5,17 @@ import { getDeadlineColor, formatDeadline } from "../../utils/deadline";
 
 const { Text } = Typography;
 
-const priorityColor = { low: "green", medium: "orange", high: "red" };
-const priorityLabel = { low: "Низкий", medium: "Средний", high: "Высокий" };
+const PRIORITY_COLOR: Record<string, string> = {
+  low: "green",
+  medium: "orange",
+  high: "red",
+};
+
+const PRIORITY_LABEL: Record<string, string> = {
+  low: "Низкий",
+  medium: "Средний",
+  high: "Высокий",
+};
 
 interface TaskItemProps {
   task: Task;
@@ -21,134 +30,89 @@ export default function TaskItem({
   onToggle,
   onOpen,
 }: TaskItemProps) {
-  const isDone = task.completed;
   const [hovered, setHovered] = useState(false);
+  const isDone = task.completed;
 
-  // Выполненная задача
-  if (isDone) {
-    return (
-      <List.Item
-        style={{
-          borderLeft:
-            task.priority === "high"
-              ? "3px solid #ff4d4f"
-              : "3px solid transparent",
-          paddingLeft: task.priority === "high" ? 10 : 10,
-        }}
-        actions={[
-          <Popconfirm
-            title="Вернуть в активные?"
-            onConfirm={(e) => {
-              e?.stopPropagation();
-              onToggle(task.id);
-            }}
-            okText="Да"
-            cancelText="Нет"
-          >
-            <Button
-              type="text"
-              size="small"
-              onClick={(e) => e.stopPropagation()}
-            >
-              Вернуть
-            </Button>
-          </Popconfirm>,
-          <Popconfirm
-            title="Удалить задачу?"
-            onConfirm={(e) => {
-              e?.stopPropagation();
-              onDelete(task.id);
-            }}
-            okText="Удалить"
-            cancelText="Отмена"
-            okButtonProps={{ danger: true }}
-          >
-            <Button
-              type="text"
-              size="small"
-              danger
-              onClick={(e) => e.stopPropagation()}
-            >
-              Удалить
-            </Button>
-          </Popconfirm>,
-        ]}
+  // Теги для активной задачи
+  const tags = [
+    task.ticketNumber && <Tag key="ticket">#{task.ticketNumber}</Tag>,
+    task.priority && (
+      <Tag key="priority" color={PRIORITY_COLOR[task.priority]}>
+        {PRIORITY_LABEL[task.priority]}
+      </Tag>
+    ),
+    task.assignee && (
+      <Tag key="assignee" color="blue">
+        {task.assignee}
+      </Tag>
+    ),
+    task.deadline && (
+      <Tag key="deadline" color={getDeadlineColor(task.deadline)}>
+        ⏰ {formatDeadline(task.deadline)}
+      </Tag>
+    ),
+  ].filter(Boolean);
+
+  const shortDescription = task.description
+    ? task.description.slice(0, 60) +
+      (task.description.length > 60 ? "..." : "")
+    : null;
+
+  const handleToggle = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    onToggle(task.id);
+  };
+
+  const handleDelete = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    onDelete(task.id);
+  };
+
+  const actions = [
+    <Popconfirm
+      key="toggle"
+      title={isDone ? "Вернуть в активные?" : "Отметить как выполненную?"}
+      onConfirm={handleToggle}
+      onCancel={(e) => e?.stopPropagation()}
+      okText="Да"
+      cancelText="Нет"
+    >
+      <Button type="text" size="small" onClick={(e) => e.stopPropagation()}>
+        {isDone ? "Вернуть" : "Выполнено?"}
+      </Button>
+    </Popconfirm>,
+
+    <Popconfirm
+      key="delete"
+      title="Удалить задачу?"
+      description={!isDone ? "Это действие нельзя отменить" : undefined}
+      onConfirm={handleDelete}
+      onCancel={(e) => e?.stopPropagation()}
+      okText="Удалить"
+      cancelText="Отмена"
+      okButtonProps={{ danger: true }}
+    >
+      <Button
+        type="text"
+        size="small"
+        danger
+        onClick={(e) => e.stopPropagation()}
       >
-        <Tooltip title="Посмотреть подробнее">
-          <div
-            onClick={() => onOpen(task)}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            style={{
-              cursor: "pointer",
-              transition: "transform 0.15s ease",
-              transform: hovered ? "scale(1.02)" : "scale(1)",
-              display: "flex",
-              gap: 8,
-              alignItems: "baseline",
-            }}
-          >
-            <Text type="secondary">—</Text>
-            <Text>{task.ticketNumber || task.title}</Text>
-            {task.description && (
-              <Text type="secondary" style={{ fontSize: 11 }}>
-                {task.description.slice(0, 60)}
-                {task.description.length > 60 ? "..." : ""}
-              </Text>
-            )}
-          </div>
-        </Tooltip>
-      </List.Item>
-    );
-  }
+        Удалить
+      </Button>
+    </Popconfirm>,
+  ];
 
   return (
     <List.Item
+      actions={actions}
       style={{
         borderLeft:
           task.priority === "high"
             ? "3px solid #ff4d4f"
             : "3px solid transparent",
-        paddingLeft: task.priority === "high" ? 10 : 10,
+        paddingLeft: 10,
       }}
-      actions={[
-        <Popconfirm
-          title={isDone ? "Вернуть в активные?" : "Отметить как выполненную?"}
-          onConfirm={(e) => {
-            e?.stopPropagation();
-            onToggle(task.id);
-          }}
-          onCancel={(e) => e?.stopPropagation()}
-          okText="Да"
-          cancelText="Нет"
-        >
-          <Button type="text" size="small" onClick={(e) => e.stopPropagation()}>
-            {isDone ? "Вернуть" : "Выполнено?"}
-          </Button>
-        </Popconfirm>,
-
-        <Popconfirm
-          title="Удалить задачу?"
-          description="Это действие нельзя отменить"
-          onConfirm={(e) => {
-            e?.stopPropagation();
-            onDelete(task.id);
-          }}
-          onCancel={(e) => e?.stopPropagation()}
-          okText="Удалить"
-          cancelText="Отмена"
-          okButtonProps={{ danger: true }}
-        >
-          <Button
-            type="text"
-            size="small"
-            danger
-            onClick={(e) => e.stopPropagation()}
-          >
-            Удалить
-          </Button>
-        </Popconfirm>,
-      ]}
     >
       <Tooltip title="Посмотреть подробнее">
         <div
@@ -157,36 +121,38 @@ export default function TaskItem({
           onMouseLeave={() => setHovered(false)}
           style={{
             display: "flex",
-            flexDirection: "column",
-            gap: 4,
+            flexDirection: isDone ? "row" : "column",
+            alignItems: isDone ? "baseline" : undefined,
+            gap: isDone ? 8 : 4,
             cursor: "pointer",
             transition: "transform 0.15s ease",
             transform: hovered ? "scale(1.02)" : "scale(1)",
           }}
         >
-          <Text delete={isDone}>{task.title}</Text>
-
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {task.ticketNumber && <Tag>#{task.ticketNumber}</Tag>}
-            {task.priority && (
-              <Tag color={priorityColor[task.priority]}>
-                {priorityLabel[task.priority]}
-              </Tag>
-            )}
-            {task.assignee && <Tag color="blue">{task.assignee}</Tag>}
-            {task.deadline && (
-              <Tag color={getDeadlineColor(task.deadline)}>
-                ⏰ {formatDeadline(task.deadline)}
-              </Tag>
-            )}
-          </div>
-
-          {task.screenshots && task.screenshots.length > 0 && (
-            <img
-              src={task.screenshots[0]}
-              alt="превью"
-              style={{ height: 60, borderRadius: 4, objectFit: "cover" }}
-            />
+          {isDone ? (
+            <>
+              <Text type="secondary">—</Text>
+              <Text>{task.ticketNumber || task.title}</Text>
+              {shortDescription && (
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                  {shortDescription}
+                </Text>
+              )}
+            </>
+          ) : (
+            <>
+              <Text>{task.title}</Text>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {tags}
+              </div>
+              {task.screenshots?.[0] && (
+                <img
+                  src={task.screenshots[0]}
+                  alt="превью"
+                  style={{ height: 60, borderRadius: 4, objectFit: "cover" }}
+                />
+              )}
+            </>
           )}
         </div>
       </Tooltip>

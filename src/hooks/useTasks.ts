@@ -1,41 +1,68 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { Task } from "../types/Task";
-import * as api from "../api/tasks";
+
+const STORAGE_KEY = "tasks";
+
+function loadFromStorage(): Task[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveToStorage(tasks: Task[]): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+}
 
 export function useTasks() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(() => loadFromStorage());
 
-  // Загружаем задачи с сервера при старте
+  // сохранение задач в локал сторадж
   useEffect(() => {
-    api.getTasks().then(setTasks);
-  }, []);
+    saveToStorage(tasks);
+  }, [tasks]);
 
-  const saveTask = async (task: Task) => {
-    const exists = tasks.find((t) => t.id === task.id);
-
-    if (exists) {
-      const updated = await api.updateTask(task);
-      setTasks((prev) => prev.map((t) => (t.id === task.id ? updated : t)));
-    } else {
-      const created = await api.createTask(task);
-      setTasks((prev) => [...prev, created]);
-    }
+  const addTask = (task: Task): void => {
+    setTasks((prevTasks) => [...prevTasks, task]);
   };
 
-  const deleteTask = async (id: string) => {
-    await api.deleteTask(id);
-    setTasks((prev) => prev.filter((item) => item.id !== id));
+  const updateTask = (updatedTask: Task): void => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === updatedTask.id ? updatedTask : task,
+      ),
+    );
   };
 
-  const toggleTask = async (id: string) => {
-    const updated = await api.toggleTask(id);
-    setTasks((prev) => prev.map((item) => (item.id === id ? updated : item)));
+  const deleteTask = (id: string): void => {
+    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
   };
+
+  const toggleTask = (id: string): void => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === id ? { ...task, completed: !task.completed } : task,
+      ),
+    );
+  };
+
+  const activeTasks = useMemo(
+    () => tasks.filter((task) => !task.completed),
+    [tasks],
+  );
+
+  const doneTasks = useMemo(
+    () => tasks.filter((task) => task.completed),
+    [tasks],
+  );
 
   return {
-    activeTasks: tasks.filter((item) => !item.completed),
-    doneTasks: tasks.filter((item) => item.completed),
-    saveTask,
+    activeTasks,
+    doneTasks,
+    addTask,
+    updateTask,
     deleteTask,
     toggleTask,
   };

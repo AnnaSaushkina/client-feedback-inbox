@@ -3,59 +3,47 @@ import { render, screen } from "@testing-library/react";
 import TaskSection from "../components/Board/TaskSection";
 import type { Task } from "../types/Task";
 
-const mockTask: Task = {
+// обычная задача без дедлайна используем в большинстве тестов
+const basicTask: Task = {
   id: "1",
-  title: "Тестовая задача",
+  title: "Починить баг с авторизацией",
   completed: false,
   priority: "medium",
 };
 
+//  переопределяем только то что нужно в конкретном тесте
+const defaultProps = {
+  title: "Активные задачи",
+  tasks: [],
+  onDelete: vi.fn(),
+  onToggle: vi.fn(),
+  onOpen: vi.fn(),
+};
+
+// возвращает завтрашнюю дату в 10:00
+const getTomorrow = (): string => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(10, 0, 0, 0);
+  return tomorrow.toISOString();
+};
+
 describe("TaskSection", () => {
-  it("показывает 'Список пуст' если задач нет", () => {
-    render(
-      <TaskSection
-        title="Активные"
-        tasks={[]}
-        onDelete={vi.fn()}
-        onToggle={vi.fn()}
-        onOpen={vi.fn()}
-      />,
-    );
+  it("показывает заглушку когда список пустой", () => {
+    render(<TaskSection {...defaultProps} />);
     expect(screen.getByText("Список пуст")).toBeInTheDocument();
   });
 
-  it("рендерит задачи", () => {
-    render(
-      <TaskSection
-        title="Активные"
-        tasks={[mockTask]}
-        onDelete={vi.fn()}
-        onToggle={vi.fn()}
-        onOpen={vi.fn()}
-      />,
-    );
-    expect(screen.getByText("Тестовая задача")).toBeInTheDocument();
+  it("показывает задачу если она есть в списке", () => {
+    render(<TaskSection {...defaultProps} tasks={[basicTask]} />);
+    expect(screen.getByText("Починить баг с авторизацией")).toBeInTheDocument();
   });
 
-  it("показывает подкатегорию Завтра если есть задача с завтрашним дедлайном", () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(10, 0, 0, 0);
+  it("выделяет задачи с дедлайном завтра в отдельную группу", () => {
+    const taskDueTomorrow = { ...basicTask, deadline: getTomorrow() };
 
-    const taskWithTomorrow: Task = {
-      ...mockTask,
-      deadline: tomorrow.toISOString(),
-    };
+    render(<TaskSection {...defaultProps} tasks={[taskDueTomorrow]} />);
 
-    render(
-      <TaskSection
-        title="Активные"
-        tasks={[taskWithTomorrow]}
-        onDelete={vi.fn()}
-        onToggle={vi.fn()}
-        onOpen={vi.fn()}
-      />,
-    );
     expect(screen.getByText("— Завтра")).toBeInTheDocument();
   });
 });

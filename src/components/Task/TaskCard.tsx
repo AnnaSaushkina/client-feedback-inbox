@@ -39,7 +39,6 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
   };
 
   const handleSave = () => {
-    console.log("handleSave вызван", { title, deadline });
     onSave({
       ...task,
       title,
