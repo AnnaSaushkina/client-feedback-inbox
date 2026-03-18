@@ -1,13 +1,36 @@
-import { useState } from "react";
-import { Modal, Tag, Image, Button, Input, Select, DatePicker } from "antd";
+import { useState, useRef } from "react";
+import {
+  Modal,
+  Tag,
+  Image,
+  Button,
+  Input,
+  Select,
+  DatePicker,
+  Typography,
+} from "antd";
+// import { UploadOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import type { Task, Priority, Assignee } from "../../types/Task";
 import { getDeadlineColor, formatDeadline } from "../../utils/deadline";
 
 const { TextArea } = Input;
+const { Text } = Typography;
 
 const priorityColor = { low: "green", medium: "orange", high: "red" };
 const priorityLabel = { low: "Низкий", medium: "Средний", high: "Высокий" };
+
+const DISABLED_HOURS = [0, 1, 2, 3, 4, 5, 6, 7, 23];
+const DISABLED_MINUTES = Array.from({ length: 60 }, (_, i) => i).filter(
+  (m) => m !== 0,
+);
+
+const labelStyle = { fontSize: 13, color: "#aaa", marginBottom: 2 };
+const fieldStyle = {
+  display: "flex",
+  flexDirection: "column" as const,
+  gap: 2,
+};
 
 interface TaskCardProps {
   task: Task | null;
@@ -24,6 +47,8 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
   const [priority, setPriority] = useState<Priority>("medium");
   const [assignee, setAssignee] = useState<Assignee | null>(null);
   const [screenshots, setScreenshots] = useState<string[]>([]);
+  const [titleError, setTitleError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!task) return null;
 
@@ -35,13 +60,18 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
     setPriority(task.priority ?? "medium");
     setAssignee(task.assignee ?? null);
     setScreenshots(task.screenshots ?? []);
+    setTitleError("");
     setIsEditing(true);
   };
 
   const handleSave = () => {
+    if (!title.trim()) {
+      setTitleError("Название задачи обязательно");
+      return;
+    }
     onSave({
       ...task,
-      title,
+      title: title.trim(),
       description,
       ticketNumber,
       deadline: deadline ? deadline.toISOString() : undefined,
@@ -50,20 +80,32 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
       screenshots: screenshots.length > 0 ? screenshots : undefined,
     });
     setIsEditing(false);
+    setTitleError("");
+  };
+
+  const addScreenshotFromFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () =>
+      setScreenshots((prev) => [...prev, reader.result as string]);
+    reader.readAsDataURL(file);
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
-    const items = e.clipboardData.items;
-    for (const item of items) {
-      if (item.type.startsWith("image/")) {
-        const file = item.getAsFile();
-        if (!file) continue;
-        const reader = new FileReader();
-        reader.onload = () =>
-          setScreenshots((prev) => [...prev, reader.result as string]);
-        reader.readAsDataURL(file);
-      }
+    for (const item of e.clipboardData.items) {
+      if (!item.type.startsWith("image/")) continue;
+      const file = item.getAsFile();
+      if (!file) continue;
+      addScreenshotFromFile(file);
     }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    Array.from(files).forEach((file) => {
+      if (file.type.startsWith("image/")) addScreenshotFromFile(file);
+    });
+    e.target.value = "";
   };
 
   return (
@@ -90,107 +132,168 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
     >
       {isEditing ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <Input
-            value={ticketNumber}
-            onChange={(e) => setTicketNumber(e.target.value)}
-            placeholder="Номер тикета"
-          />
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Название *"
-          />
+          {/* Номер тикета */}
+          <div style={fieldStyle}>
+            <Text style={labelStyle}>Номер тикета</Text>
+            <Input
+              value={ticketNumber}
+              onChange={(e) =>
+                setTicketNumber(e.target.value.replace(/\D/g, ""))
+              }
+              placeholder="Например: 1234"
+            />
+          </div>
 
-          <TextArea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Описание"
-            rows={3}
-          />
+          {/* Название */}
+          <div style={fieldStyle}>
+            <Text style={labelStyle}>
+              Название задачи <span style={{ color: "#ff4d4f" }}>*</span>
+            </Text>
+            <Input
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (e.target.value.trim()) setTitleError("");
+              }}
+              placeholder="Кратко опишите задачу"
+              status={titleError ? "error" : undefined}
+            />
+            {titleError && (
+              <Text style={{ color: "#ff4d4f", fontSize: 12 }}>
+                {titleError}
+              </Text>
+            )}
+          </div>
 
-          <DatePicker
-            value={deadline}
-            onChange={setDeadline}
-            showTime={{
-              format: "HH",
-              disabledTime: () => ({
-                disabledHours: () => [0, 1, 2, 3, 4, 5, 6, 7, 23],
-                disabledMinutes: () =>
-                  Array.from({ length: 60 }, (_, i) => i).filter(
-                    (m) => m !== 0,
-                  ),
-              }),
-            }}
-            format="dd, DD.MM, HH:00"
-            placeholder="Дедлайн"
-            style={{ width: "100%" }}
-          />
+          {/* Описание */}
+          <div style={fieldStyle}>
+            <Text style={labelStyle}>Описание</Text>
+            <TextArea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Подробности, контекст, ссылки"
+              rows={3}
+            />
+          </div>
 
-          <Select
-            value={priority}
-            onChange={setPriority}
-            options={[
-              { value: "low", label: "Низкий" },
-              { value: "medium", label: "Средний" },
-              { value: "high", label: "Высокий" },
-            ]}
-          />
-          <Select
-            value={assignee}
-            onChange={setAssignee}
-            placeholder="Исполнитель"
-            options={[
-              { value: "Аня", label: "Аня" },
-              { value: "Паша", label: "Паша" },
-              { value: "Олег", label: "Олег" },
-            ]}
-          />
+          {/* Дедлайн */}
+          <div style={fieldStyle}>
+            <Text style={labelStyle}>Дедлайн</Text>
+            <DatePicker
+              value={deadline}
+              onChange={setDeadline}
+              showTime={{
+                format: "HH",
+                hideDisabledOptions: true,
+                disabledTime: () => ({
+                  disabledHours: () => DISABLED_HOURS,
+                  disabledMinutes: () => DISABLED_MINUTES,
+                }),
+              }}
+              format="DD.MM.YYYY, HH:00"
+              placeholder="Выберите дату и время"
+              style={{ width: "100%" }}
+              inputReadOnly
+            />
+          </div>
 
-          <div
-            onPaste={handlePaste}
-            style={{
-              border: "1px dashed #444",
-              borderRadius: 8,
-              padding: 16,
-              color: "#888",
-            }}
-          >
+          {/* Приоритет */}
+          <div style={fieldStyle}>
+            <Text style={labelStyle}>Приоритет</Text>
+            <Select
+              value={priority}
+              onChange={setPriority}
+              options={[
+                { value: "low", label: "Низкий" },
+                { value: "medium", label: "Средний" },
+                { value: "high", label: "Высокий" },
+              ]}
+            />
+          </div>
+
+          {/* Исполнитель */}
+          <div style={fieldStyle}>
+            <Text style={labelStyle}>Исполнитель</Text>
+            <Select
+              value={assignee}
+              onChange={setAssignee}
+              placeholder="Выберите исполнителя"
+              options={[
+                { value: "Аня", label: "Аня" },
+                { value: "Паша", label: "Паша" },
+                { value: "Олег", label: "Олег" },
+              ]}
+            />
+          </div>
+
+          {/* Скриншоты */}
+          <div style={fieldStyle}>
+            <Text style={labelStyle}>Скриншоты</Text>
             <div
+              onPaste={handlePaste}
               style={{
-                textAlign: "center",
-                marginBottom: screenshots.length ? 12 : 0,
+                border: "1px dashed #444",
+                borderRadius: 8,
+                padding: 16,
+                color: "#888",
               }}
             >
-              Вставьте скриншот (Ctrl+V) — можно несколько
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {screenshots.map((src, i) => (
-                <div key={i} style={{ position: "relative" }}>
-                  <img src={src} style={{ height: 80, borderRadius: 4 }} />
-                  <button
-                    onClick={() =>
-                      setScreenshots((prev) =>
-                        prev.filter((_, idx) => idx !== i),
-                      )
-                    }
-                    style={{
-                      position: "absolute",
-                      top: 2,
-                      right: 2,
-                      background: "rgba(0,0,0,0.6)",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "50%",
-                      width: 18,
-                      height: 18,
-                      cursor: "pointer",
-                      fontSize: 10,
-                    }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  marginBottom: screenshots.length ? 12 : 0,
+                }}
+              >
+                <span style={{ fontSize: 13 }}>
+                  Ctrl+V / Cmd+V — вставить скриншот
+                </span>
+                <Button
+                  size="small"
+                  // icon={<UploadOutlined />}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Загрузить файл
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: "none" }}
+                  onChange={handleFileUpload}
+                />
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {screenshots.map((src, i) => (
+                  <div key={i} style={{ position: "relative" }}>
+                    <img src={src} style={{ height: 80, borderRadius: 4 }} />
+                    <button
+                      onClick={() =>
+                        setScreenshots((prev) =>
+                          prev.filter((_, idx) => idx !== i),
+                        )
+                      }
+                      style={{
+                        position: "absolute",
+                        top: 2,
+                        right: 2,
+                        background: "rgba(0,0,0,0.6)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: 18,
+                        height: 18,
+                        cursor: "pointer",
+                        fontSize: 10,
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

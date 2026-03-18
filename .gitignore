@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 
 .github/*
+
+.env.production
+.env.local
+.env
+
+.Обновления.md

@@ -59,9 +59,19 @@ export default function AppLayout() {
       })
       .join("\n");
 
-    navigator.clipboard.writeText(
-      `Сегодня [${today}] сделали:\n${doneLines || "—"}\n\nНа завтра:\n${activeLines || "— нет задач"}`,
-    );
+    const text = `Сегодня [${today}] сделали:\n${doneLines || "—"}\n\nНа завтра:\n${activeLines || "— нет задач"}`;
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+    } else {
+      const el = document.createElement("textarea");
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+    }
+
     message.success("Отчёт скопирован", 1.5);
   };
 

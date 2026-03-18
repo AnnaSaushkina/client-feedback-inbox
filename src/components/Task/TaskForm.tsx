@@ -1,7 +1,10 @@
-import { Input, Select, DatePicker } from "antd";
+import { useRef } from "react";
+import { Input, Select, DatePicker, Typography, Button } from "antd";
+// import { UploadOutlined } from "@ant-design/icons";
 import type { TaskFormValues } from "../../types/TaskForm";
 
 const { TextArea } = Input;
+const { Text } = Typography;
 
 const PRIORITY_OPTIONS = [
   { value: "low", label: "Низкий" },
@@ -23,11 +26,28 @@ const DISABLED_MINUTES = Array.from({ length: 60 }, (_, i) => i).filter(
 interface TaskFormProps {
   values: TaskFormValues;
   onChange: (values: TaskFormValues) => void;
+  errors?: Partial<Record<keyof TaskFormValues, string>>;
 }
 
-export default function TaskForm({ values, onChange }: TaskFormProps) {
+const labelStyle = { fontSize: 13, color: "#aaa", marginBottom: 2 };
+const fieldStyle = {
+  display: "flex",
+  flexDirection: "column" as const,
+  gap: 2,
+};
+
+export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const update = (field: keyof TaskFormValues, value: unknown) => {
     onChange({ ...values, [field]: value });
+  };
+
+  const addScreenshotFromFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () =>
+      update("screenshots", [...values.screenshots, reader.result as string]);
+    reader.readAsDataURL(file);
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -35,11 +55,17 @@ export default function TaskForm({ values, onChange }: TaskFormProps) {
       if (!item.type.startsWith("image/")) continue;
       const file = item.getAsFile();
       if (!file) continue;
-      const reader = new FileReader();
-      reader.onload = () =>
-        update("screenshots", [...values.screenshots, reader.result as string]);
-      reader.readAsDataURL(file);
+      addScreenshotFromFile(file);
     }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    Array.from(files).forEach((file) => {
+      if (file.type.startsWith("image/")) addScreenshotFromFile(file);
+    });
+    e.target.value = "";
   };
 
   const removeScreenshot = (index: number) => {
@@ -51,95 +77,156 @@ export default function TaskForm({ values, onChange }: TaskFormProps) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <Input
-        value={values.ticketNumber}
-        onChange={(e) => update("ticketNumber", e.target.value)}
-        placeholder="Номер тикета"
-      />
-      <Input
-        value={values.title}
-        onChange={(e) => update("title", e.target.value)}
-        placeholder="Название задачи *"
-      />
-      <TextArea
-        value={values.description}
-        onChange={(e) => update("description", e.target.value)}
-        placeholder="Описание задачи"
-        rows={3}
-      />
-      <DatePicker
-        value={values.deadline}
-        onChange={(val) => update("deadline", val)}
-        showTime={{
-          format: "HH",
-          hideDisabledOptions: true,
-          disabledTime: () => ({
-            disabledHours: () => DISABLED_HOURS,
-            disabledMinutes: () => DISABLED_MINUTES,
-          }),
-        }}
-        format="dd, DD.MM, HH:00"
-        placeholder="Дедлайн"
-        style={{ width: "100%" }}
-      />
-      <Select
-        value={values.priority}
-        onChange={(val) => update("priority", val)}
-        options={PRIORITY_OPTIONS}
-      />
-      <Select
-        value={values.assignee}
-        onChange={(val) => update("assignee", val)}
-        placeholder="Исполнитель"
-        options={ASSIGNEE_OPTIONS}
-      />
+      {/* Номер тикета */}
+      <div style={fieldStyle}>
+        <Text style={labelStyle}>Номер тикета</Text>
+        <Input
+          value={values.ticketNumber}
+          onChange={(e) => {
+            const val = e.target.value.replace(/\D/g, "");
+            update("ticketNumber", val);
+          }}
+          placeholder="Например: 1234"
+        />
+      </div>
 
-      <div
-        onPaste={handlePaste}
-        style={{
-          border: "1px dashed #444",
-          borderRadius: 8,
-          padding: 16,
-          color: "#888",
-          cursor: "text",
-        }}
-      >
+      {/* Название задачи */}
+      <div style={fieldStyle}>
+        <Text style={labelStyle}>
+          Название задачи <span style={{ color: "#ff4d4f" }}>*</span>
+        </Text>
+        <Input
+          value={values.title}
+          onChange={(e) => update("title", e.target.value)}
+          placeholder="Кратко опишите задачу"
+          status={errors?.title ? "error" : undefined}
+        />
+        {errors?.title && (
+          <Text style={{ color: "#ff4d4f", fontSize: 12 }}>{errors.title}</Text>
+        )}
+      </div>
+
+      {/* Описание */}
+      <div style={fieldStyle}>
+        <Text style={labelStyle}>Описание</Text>
+        <TextArea
+          value={values.description}
+          onChange={(e) => update("description", e.target.value)}
+          placeholder="Подробности, контекст, ссылки"
+          rows={3}
+        />
+      </div>
+
+      {/* Дедлайн */}
+      <div style={fieldStyle}>
+        <Text style={labelStyle}>Дедлайн</Text>
+        <DatePicker
+          value={values.deadline}
+          onChange={(val) => update("deadline", val)}
+          showTime={{
+            format: "HH",
+            hideDisabledOptions: true,
+            disabledTime: () => ({
+              disabledHours: () => DISABLED_HOURS,
+              disabledMinutes: () => DISABLED_MINUTES,
+            }),
+          }}
+          format="DD.MM.YYYY, HH:00"
+          placeholder="Выберите дату и время"
+          style={{ width: "100%" }}
+          inputReadOnly
+        />
+      </div>
+
+      {/* Приоритет */}
+      <div style={fieldStyle}>
+        <Text style={labelStyle}>Приоритет</Text>
+        <Select
+          value={values.priority}
+          onChange={(val) => update("priority", val)}
+          options={PRIORITY_OPTIONS}
+        />
+      </div>
+
+      {/* Исполнитель */}
+      <div style={fieldStyle}>
+        <Text style={labelStyle}>Исполнитель</Text>
+        <Select
+          value={values.assignee}
+          onChange={(val) => update("assignee", val)}
+          placeholder="Выберите исполнителя"
+          options={ASSIGNEE_OPTIONS}
+        />
+      </div>
+
+      {/* Скриншоты */}
+      <div style={fieldStyle}>
+        <Text style={labelStyle}>Скриншоты</Text>
         <div
+          onPaste={handlePaste}
           style={{
-            textAlign: "center",
-            marginBottom: values.screenshots.length ? 12 : 0,
+            border: "1px dashed #444",
+            borderRadius: 8,
+            padding: 16,
+            color: "#888",
           }}
         >
-          Вставьте скриншот сюда (Ctrl+V)
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {values.screenshots.map((src, i) => (
-            <div key={i} style={{ position: "relative" }}>
-              <img
-                src={src}
-                alt={`скриншот ${i + 1}`}
-                style={{ height: 80, borderRadius: 4 }}
-              />
-              <button
-                onClick={() => removeScreenshot(i)}
-                style={{
-                  position: "absolute",
-                  top: 2,
-                  right: 2,
-                  background: "rgba(0,0,0,0.6)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "50%",
-                  width: 18,
-                  height: 18,
-                  cursor: "pointer",
-                  fontSize: 10,
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          ))}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              marginBottom: values.screenshots.length ? 12 : 0,
+            }}
+          >
+            <span style={{ fontSize: 13 }}>
+              Ctrl+V / Cmd+V — вставить скриншот
+            </span>
+            <Button
+              size="small"
+              // icon={<UploadOutlined />}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Загрузить файл
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              style={{ display: "none" }}
+              onChange={handleFileUpload}
+            />
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {values.screenshots.map((src, i) => (
+              <div key={i} style={{ position: "relative" }}>
+                <img
+                  src={src}
+                  alt={`скриншот ${i + 1}`}
+                  style={{ height: 80, borderRadius: 4 }}
+                />
+                <button
+                  onClick={() => removeScreenshot(i)}
+                  style={{
+                    position: "absolute",
+                    top: 2,
+                    right: 2,
+                    background: "rgba(0,0,0,0.6)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: 18,
+                    height: 18,
+                    cursor: "pointer",
+                    fontSize: 10,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

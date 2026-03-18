@@ -12,13 +12,31 @@ SPA-приложение для управления задачами разра
 - Сортировать по срочности и приоритету автоматически
 - Подсвечивать дедлайн цветом: просрочен / горит / ок
 - Копировать ежедневный отчёт одной кнопкой
-- Хранить данные в localStorage
+- Хранить данные в базе данных на сервере
 
 ## Стек
 
-React 18 · TypeScript · Ant Design 5 · Vite · Vitest
+**Фронтенд:** React 18 · TypeScript · Redux Toolkit · Ant Design 5 · Vite · Vitest
 
-## Запуск
+**Бэкенд:** Express.js · SQLite · Node.js · TypeScript
+
+**Деплой:** VPS · Nginx · PM2
+
+## Демо
+
+**[Деплой приложения](https://annasaushkina.github.io/client-feedback-inbox/)**
+
+## Локальный запуск
+
+Бэкенд:
+
+```bash
+cd task-manager-server
+pnpm install
+pnpm dev
+```
+
+Фронтенд:
 
 ```bash
 pnpm install
