@@ -33,12 +33,13 @@ export default function AppLayout() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
+
   const sortByScore = (tasks: Task[]) =>
     [...tasks].sort(
       (taskA, taskB) => getTaskScore(taskA) - getTaskScore(taskB),
     );
 
-  const handleCopyReport = () => {
+  const handleCopyReport = async () => {
     const today = new Date().toLocaleDateString("ru", {
       day: "2-digit",
       month: "2-digit",
@@ -49,30 +50,35 @@ export default function AppLayout() {
       .join("\n");
 
     const activeLines = activeTasks
-      .filter((task) => task.deadline)
+      .filter((task) => task.status !== "waiting_comment")
       .map((task) => {
-        const date = new Date(task.deadline!).toLocaleDateString("ru", {
+        const label = task.ticketNumber || task.title;
+        if (!task.deadline) return `— ${label}`;
+        const date = new Date(task.deadline).toLocaleDateString("ru", {
           day: "2-digit",
           month: "2-digit",
         });
-        return `— ${task.ticketNumber || task.title} · ${date}`;
+        return `— ${label} · ${date}`;
       })
       .join("\n");
 
     const text = `Сегодня [${today}] сделали:\n${doneLines || "—"}\n\nНа завтра:\n${activeLines || "— нет задач"}`;
 
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text);
-    } else {
-      const el = document.createElement("textarea");
-      el.value = text;
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand("copy");
-      document.body.removeChild(el);
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const el = document.createElement("textarea");
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+      }
+      message.success("Отчёт скопирован", 1.5);
+    } catch {
+      message.error("Не удалось скопировать отчёт", 2);
     }
-
-    message.success("Отчёт скопирован", 1.5);
   };
 
   const today = new Date().toLocaleDateString("ru", {
@@ -127,6 +133,7 @@ export default function AppLayout() {
       />
 
       <TaskCard
+        key={selectedTask?.id}
         task={selectedTask}
         onClose={() => setSelectedTask(null)}
         onSave={(task) => {

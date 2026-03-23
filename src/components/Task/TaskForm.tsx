@@ -6,10 +6,11 @@ import type { TaskFormValues } from "../../types/TaskForm";
 const { TextArea } = Input;
 const { Text } = Typography;
 
-const PRIORITY_OPTIONS = [
-  { value: "low", label: "Низкий" },
-  { value: "medium", label: "Средний" },
-  { value: "high", label: "Высокий" },
+const STATUS_OPTIONS = [
+  { value: "high", label: "🔴 Высокий" },
+  { value: "medium", label: "🟡 Средний" },
+  { value: "low", label: "🟢 Низкий" },
+  { value: "waiting_comment", label: "💬 Ждём коммента" },
 ];
 
 const ASSIGNEE_OPTIONS = [
@@ -43,28 +44,38 @@ export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
     onChange({ ...values, [field]: value });
   };
 
-  const addScreenshotFromFile = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () =>
-      update("screenshots", [...values.screenshots, reader.result as string]);
-    reader.readAsDataURL(file);
+  const addScreenshotsFromFiles = (files: File[]) => {
+    const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+    if (imageFiles.length === 0) return;
+    let completed = 0;
+    const results: string[] = new Array(imageFiles.length);
+    imageFiles.forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        results[index] = reader.result as string;
+        completed++;
+        if (completed === imageFiles.length) {
+          update("screenshots", [...values.screenshots, ...results]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
+    const imageFiles: File[] = [];
     for (const item of e.clipboardData.items) {
       if (!item.type.startsWith("image/")) continue;
       const file = item.getAsFile();
-      if (!file) continue;
-      addScreenshotFromFile(file);
+      if (file) imageFiles.push(file);
     }
+    if (imageFiles.length > 0) addScreenshotsFromFiles(imageFiles);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    Array.from(files).forEach((file) => {
-      if (file.type.startsWith("image/")) addScreenshotFromFile(file);
-    });
+    addScreenshotsFromFiles(Array.from(files));
     e.target.value = "";
   };
 
@@ -79,14 +90,16 @@ export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {/* Номер тикета */}
       <div style={fieldStyle}>
-        <Text style={labelStyle}>Номер тикета</Text>
         <Input
           value={values.ticketNumber}
           onChange={(e) => {
             const val = e.target.value.replace(/\D/g, "");
             update("ticketNumber", val);
           }}
-          placeholder="Например: 1234"
+          placeholder="Номер тикета"
+          prefix={<Text style={{ color: "#aaa" }}>#</Text>}
+          size="large"
+          style={values.ticketNumber ? { borderColor: "#4096ff", fontWeight: 600 } : undefined}
         />
       </div>
 
@@ -117,46 +130,46 @@ export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
         />
       </div>
 
-      {/* Дедлайн */}
-      <div style={fieldStyle}>
-        <Text style={labelStyle}>Дедлайн</Text>
-        <DatePicker
-          value={values.deadline}
-          onChange={(val) => update("deadline", val)}
-          showTime={{
-            format: "HH",
-            hideDisabledOptions: true,
-            disabledTime: () => ({
-              disabledHours: () => DISABLED_HOURS,
-              disabledMinutes: () => DISABLED_MINUTES,
-            }),
-          }}
-          format="DD.MM.YYYY, HH:00"
-          placeholder="Выберите дату и время"
-          style={{ width: "100%" }}
-          inputReadOnly
-        />
-      </div>
+      {/* Статус + Дедлайн + Исполнитель — горизонтально */}
+      <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ ...fieldStyle, flex: 1 }}>
+          <Text style={labelStyle}>Статус</Text>
+          <Select
+            value={values.combinedStatus}
+            onChange={(val) => update("combinedStatus", val)}
+            options={STATUS_OPTIONS}
+          />
+        </div>
 
-      {/* Приоритет */}
-      <div style={fieldStyle}>
-        <Text style={labelStyle}>Приоритет</Text>
-        <Select
-          value={values.priority}
-          onChange={(val) => update("priority", val)}
-          options={PRIORITY_OPTIONS}
-        />
-      </div>
+        <div style={{ ...fieldStyle, flex: 1 }}>
+          <Text style={labelStyle}>Дедлайн</Text>
+          <DatePicker
+            value={values.deadline}
+            onChange={(val) => update("deadline", val)}
+            showTime={{
+              format: "HH",
+              hideDisabledOptions: true,
+              disabledTime: () => ({
+                disabledHours: () => DISABLED_HOURS,
+                disabledMinutes: () => DISABLED_MINUTES,
+              }),
+            }}
+            format="DD.MM, HH:00"
+            placeholder="Дата"
+            inputReadOnly
+          />
+        </div>
 
-      {/* Исполнитель */}
-      <div style={fieldStyle}>
-        <Text style={labelStyle}>Исполнитель</Text>
-        <Select
-          value={values.assignee}
-          onChange={(val) => update("assignee", val)}
-          placeholder="Выберите исполнителя"
-          options={ASSIGNEE_OPTIONS}
-        />
+        <div style={{ ...fieldStyle, flex: 1 }}>
+          <Text style={labelStyle}>Исполнитель</Text>
+          <Select
+            value={values.assignee}
+            onChange={(val) => update("assignee", val)}
+            placeholder="Кто"
+            options={ASSIGNEE_OPTIONS}
+            allowClear
+          />
+        </div>
       </div>
 
       {/* Скриншоты */}

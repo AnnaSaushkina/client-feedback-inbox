@@ -1,5 +1,6 @@
 export type Priority = "low" | "medium" | "high";
 export type Assignee = "Аня" | "Паша" | "Олег";
+export type TaskStatus = "waiting_comment";
 
 export interface Task {
   id: string;
@@ -11,4 +12,5 @@ export interface Task {
   priority?: Priority;
   assignee?: Assignee;
   screenshots?: string[];
+  status?: TaskStatus;
 }

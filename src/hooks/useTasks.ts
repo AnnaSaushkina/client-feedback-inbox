@@ -51,8 +51,10 @@ export function useTasks() {
   const updateTask = async (updatedTask: Task): Promise<void> => {
     if (USE_API) {
       const updated = await api.updateTask(updatedTask);
+      // Мержим: сохраняем локальные поля которых нет на сервере (например status)
+      const merged = { ...updatedTask, ...updated };
       setTasks((prev) =>
-        prev.map((task) => (task.id === updatedTask.id ? updated : task)),
+        prev.map((task) => (task.id === updatedTask.id ? merged : task)),
       );
     } else {
       setTasks((prev) =>

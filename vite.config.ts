@@ -2,7 +2,8 @@ import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  base: "/",
+  base:
+    process.env.DEPLOY_TARGET === "github" ? "/client-feedback-inbox/" : "/",
   plugins: [react()],
   test: {
     environment: "jsdom",

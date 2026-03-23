@@ -1,4 +1,4 @@
-import { Card, List } from "antd";
+import { Card } from "antd";
 import type { Task } from "../../types/Task";
 import TaskItem from "./TaskItem";
 
@@ -56,16 +56,14 @@ export default function TaskSection({
 
   return (
     <Card title={title} style={{ marginBottom: 16 }}>
+      {otherTasks.length > 0 && <div>{otherTasks.map(renderTask)}</div>}
       {tomorrowTasks.length > 0 && (
         <>
           <p style={{ color: "#888", fontSize: 12, margin: "8px 0 4px" }}>
             — Завтра
           </p>
-          <List dataSource={tomorrowTasks} renderItem={renderTask} />
+          <div>{tomorrowTasks.map(renderTask)}</div>
         </>
-      )}
-      {otherTasks.length > 0 && (
-        <List dataSource={otherTasks} renderItem={renderTask} />
       )}
     </Card>
   );

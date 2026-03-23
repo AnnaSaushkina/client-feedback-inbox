@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { List, Button, Typography, Tag, Tooltip, Popconfirm } from "antd";
+import { Button, Typography, Tag, Tooltip, Popconfirm } from "antd";
 import type { Task } from "../../types/Task";
 import { getDeadlineColor, formatDeadline } from "../../utils/deadline";
 
@@ -32,15 +32,19 @@ export default function TaskItem({
 }: TaskItemProps) {
   const [hovered, setHovered] = useState(false);
   const isDone = task.completed;
+  const isWaiting = task.status === "waiting_comment";
+
 
   // Теги для активной задачи
   const tags = [
     task.ticketNumber && <Tag key="ticket">#{task.ticketNumber}</Tag>,
-    task.priority && (
-      <Tag key="priority" color={PRIORITY_COLOR[task.priority]}>
-        {PRIORITY_LABEL[task.priority]}
-      </Tag>
-    ),
+    isWaiting
+      ? <Tag key="status" color="default">💬 Ждём коммента</Tag>
+      : task.priority && (
+          <Tag key="priority" color={PRIORITY_COLOR[task.priority]}>
+            {PRIORITY_LABEL[task.priority]}
+          </Tag>
+        ),
     task.assignee && (
       <Tag key="assignee" color="blue">
         {task.assignee}
@@ -104,14 +108,19 @@ export default function TaskItem({
   ];
 
   return (
-    <List.Item
-      actions={actions}
+    <div
       style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "12px 0",
+        borderBottom: "1px solid rgba(5,5,5,0.06)",
         borderLeft:
           task.priority === "high"
             ? "3px solid #ff4d4f"
             : "3px solid transparent",
         paddingLeft: 10,
+        opacity: isWaiting ? 0.45 : 1,
       }}
     >
       <Tooltip title="Посмотреть подробнее">
@@ -120,6 +129,7 @@ export default function TaskItem({
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           style={{
+            flex: 1,
             display: "flex",
             flexDirection: isDone ? "row" : "column",
             alignItems: isDone ? "baseline" : undefined,
@@ -156,6 +166,9 @@ export default function TaskItem({
           )}
         </div>
       </Tooltip>
-    </List.Item>
+      <div style={{ display: "flex", gap: 4, marginLeft: 8, flexShrink: 0 }}>
+        {actions}
+      </div>
+    </div>
   );
 }
