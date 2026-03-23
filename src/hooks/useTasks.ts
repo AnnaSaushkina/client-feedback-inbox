@@ -66,7 +66,8 @@ export function useTasks() {
   useEffect(() => {
     if (!USE_API) {
       saveToStorage(tasks);
-    } else {
+    } else if (tasks.length > 0) {
+      // Сохраняем только после загрузки — иначе пустой начальный стейт затрёт localStorage
       saveStatuses(tasks);
     }
   }, [tasks]);
