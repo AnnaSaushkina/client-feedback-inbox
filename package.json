@@ -9,9 +9,11 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy:github": "cross-env DEPLOY_TARGET=github pnpm build && gh-pages -d dist",
-    "deploy:prod": "git add . && git commit -m 'update' && git push && pnpm build && scp -r dist/* root@157.22.231.139:/var/www/html/",
-    "test": "vitest"
+    "deploy:github": "cross-env DEPLOY_TARGET=github VITE_API_URL= pnpm build && gh-pages -d dist",
+    "deploy:prod": "git add . && git commit -m 'update' && git push && cross-env VITE_API_URL=http://157.22.231.139/api pnpm build && scp -r dist/* root@157.22.231.139:/var/www/html/",
+    "test": "vitest",
+    "server": "pnpm --filter server dev",
+    "server:start": "pnpm --filter server start"
   },
   "dependencies": {
     "antd": "^6.3.1",

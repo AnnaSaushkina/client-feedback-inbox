@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
-import type { Task, TaskStatus } from "../types/Task";
+import type { Task } from "../types/Task";
 import * as api from "../api/tasks";
 
 const USE_API = !!import.meta.env.VITE_API_URL;
 const STORAGE_KEY = "tasks";
-const STATUS_STORAGE_KEY = "task_statuses";
 
 function loadFromStorage(): Task[] {
   try {
@@ -19,34 +18,6 @@ function saveToStorage(tasks: Task[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
 }
 
-// Хранит статусы отдельно — для случая когда сервер не знает о поле status
-function loadStatuses(): Record<string, TaskStatus> {
-  try {
-    const raw = localStorage.getItem(STATUS_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveStatuses(tasks: Task[]): void {
-  const statuses: Record<string, TaskStatus> = {};
-  for (const task of tasks) {
-    if (task.status) {
-      statuses[task.id] = task.status;
-    }
-  }
-  localStorage.setItem(STATUS_STORAGE_KEY, JSON.stringify(statuses));
-}
-
-function applyStatuses(tasks: Task[]): Task[] {
-  const statuses = loadStatuses();
-  return tasks.map((task) => ({
-    ...task,
-    status: statuses[task.id],
-  }));
-}
-
 const generateId = () =>
   Math.random().toString(36).slice(2) + Date.now().toString(36);
 
@@ -57,25 +28,21 @@ export function useTasks() {
 
   useEffect(() => {
     if (USE_API) {
-      api.getTasks().then((serverTasks) => {
-        setTasks(applyStatuses(serverTasks));
-      });
+      api.getTasks().then(setTasks);
     }
   }, []);
 
   useEffect(() => {
     if (!USE_API) {
       saveToStorage(tasks);
-    } else if (tasks.length > 0) {
-      // Сохраняем только после загрузки — иначе пустой начальный стейт затрёт localStorage
-      saveStatuses(tasks);
     }
   }, [tasks]);
 
   const addTask = async (task: Task): Promise<void> => {
     if (USE_API) {
-      const created = await api.createTask(task);
-      setTasks((prev) => [...prev, { ...created, status: task.status }]);
+      const taskWithId = { ...task, id: generateId() };
+      const created = await api.createTask(taskWithId);
+      setTasks((prev) => [...prev, created]);
     } else {
       const newTask = { ...task, id: generateId() };
       setTasks((prev) => [...prev, newTask]);
@@ -85,9 +52,8 @@ export function useTasks() {
   const updateTask = async (updatedTask: Task): Promise<void> => {
     if (USE_API) {
       const updated = await api.updateTask(updatedTask);
-      const merged = { ...updatedTask, ...updated, status: updatedTask.status };
       setTasks((prev) =>
-        prev.map((task) => (task.id === updatedTask.id ? merged : task)),
+        prev.map((task) => (task.id === updatedTask.id ? updated : task)),
       );
     } else {
       setTasks((prev) =>
@@ -108,7 +74,7 @@ export function useTasks() {
       const updated = await api.toggleTask(id);
       setTasks((prev) =>
         prev.map((task) =>
-          task.id === id ? { ...updated, status: task.status } : task,
+          task.id === id ? updated : task,
         ),
       );
     } else {
