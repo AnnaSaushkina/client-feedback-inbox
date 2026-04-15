@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Modal } from "antd";
-import type { Task, Priority, TaskStatus } from "../../types/Task";
+import type { Task } from "../../types/Task";
 import { type TaskFormValues, emptyForm } from "../../types/TaskForm";
 import TaskForm from "./TaskForm";
 
@@ -10,11 +10,7 @@ interface TaskEditorProps {
   onCancel: () => void;
 }
 
-export default function TaskEditor({
-  open,
-  onSubmit,
-  onCancel,
-}: TaskEditorProps) {
+export default function TaskEditor({ open, onSubmit, onCancel }: TaskEditorProps) {
   const [form, setForm] = useState<TaskFormValues>(emptyForm);
   const [errors, setErrors] = useState<Partial<Record<keyof TaskFormValues, string>>>({});
 
@@ -29,16 +25,15 @@ export default function TaskEditor({
 
   const handleOk = () => {
     if (!validate()) return;
-    const isWaiting = form.combinedStatus === "waiting_comment";
     onSubmit({
       id: "",
       title: form.title.trim(),
       completed: false,
-      description: form.description,
-      ticketNumber: form.ticketNumber,
+      description: form.description || undefined,
+      ticketNumber: form.ticketNumber || undefined,
       deadline: form.deadline ? form.deadline.toISOString() : undefined,
-      priority: isWaiting ? undefined : (form.combinedStatus as Priority),
-      status: isWaiting ? ("waiting_comment" as TaskStatus) : undefined,
+      priority: form.priority ?? undefined,
+      status: form.status,
       assignee: form.assignee ?? undefined,
       screenshots: form.screenshots.length > 0 ? form.screenshots : undefined,
     });
@@ -60,7 +55,7 @@ export default function TaskEditor({
       onCancel={handleCancel}
       okText="Создать"
       cancelText="Отмена"
-      width={600}
+      width={640}
     >
       <TaskForm values={form} onChange={setForm} errors={errors} />
     </Modal>

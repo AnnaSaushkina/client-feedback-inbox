@@ -1,16 +1,20 @@
 import { useRef } from "react";
 import { Input, Select, DatePicker, Typography, Button } from "antd";
-// import { UploadOutlined } from "@ant-design/icons";
 import type { TaskFormValues } from "../../types/TaskForm";
 
 const { TextArea } = Input;
 const { Text } = Typography;
 
 const STATUS_OPTIONS = [
+  { value: "свободно", label: "🟢 Свободно" },
+  { value: "в_работе", label: "🔵 В работе" },
+  { value: "waiting_comment", label: "💬 Ждём коммента" },
+];
+
+const PRIORITY_OPTIONS = [
   { value: "high", label: "🔴 Высокий" },
   { value: "medium", label: "🟡 Средний" },
-  { value: "low", label: "🟢 Низкий" },
-  { value: "waiting_comment", label: "💬 Ждём коммента" },
+  { value: "low", label: "⚪ Низкий" },
 ];
 
 const ASSIGNEE_OPTIONS = [
@@ -30,11 +34,11 @@ interface TaskFormProps {
   errors?: Partial<Record<keyof TaskFormValues, string>>;
 }
 
-const labelStyle = { fontSize: 13, color: "#aaa", marginBottom: 2 };
+const labelStyle = { fontSize: 14, color: "#aaa", marginBottom: 4 };
 const fieldStyle = {
   display: "flex",
   flexDirection: "column" as const,
-  gap: 2,
+  gap: 4,
 };
 
 export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
@@ -87,7 +91,7 @@ export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {/* Номер тикета */}
       <div style={fieldStyle}>
         <Input
@@ -106,12 +110,13 @@ export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
       {/* Название задачи */}
       <div style={fieldStyle}>
         <Text style={labelStyle}>
-          Название задачи <span style={{ color: "#ff4d4f" }}>*</span>
+          Название <span style={{ color: "#ff4d4f" }}>*</span>
         </Text>
         <Input
           value={values.title}
           onChange={(e) => update("title", e.target.value)}
           placeholder="Кратко опишите задачу"
+          size="large"
           status={errors?.title ? "error" : undefined}
         />
         {errors?.title && (
@@ -126,21 +131,37 @@ export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
           value={values.description}
           onChange={(e) => update("description", e.target.value)}
           placeholder="Подробности, контекст, ссылки"
-          rows={3}
+          rows={6}
+          style={{ resize: "vertical" }}
         />
       </div>
 
-      {/* Статус + Дедлайн + Исполнитель — горизонтально */}
+      {/* Статус + Приоритет */}
       <div style={{ display: "flex", gap: 12 }}>
         <div style={{ ...fieldStyle, flex: 1 }}>
           <Text style={labelStyle}>Статус</Text>
           <Select
-            value={values.combinedStatus}
-            onChange={(val) => update("combinedStatus", val)}
+            value={values.status}
+            onChange={(val) => update("status", val)}
             options={STATUS_OPTIONS}
+            size="large"
           />
         </div>
+        <div style={{ ...fieldStyle, flex: 1 }}>
+          <Text style={labelStyle}>Приоритет</Text>
+          <Select
+            value={values.priority}
+            onChange={(val) => update("priority", val)}
+            options={PRIORITY_OPTIONS}
+            placeholder="Не задан"
+            allowClear
+            size="large"
+          />
+        </div>
+      </div>
 
+      {/* Дедлайн + Исполнитель */}
+      <div style={{ display: "flex", gap: 12 }}>
         <div style={{ ...fieldStyle, flex: 1 }}>
           <Text style={labelStyle}>Дедлайн</Text>
           <DatePicker
@@ -157,9 +178,9 @@ export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
             format="DD.MM, HH:00"
             placeholder="Дата"
             inputReadOnly
+            size="large"
           />
         </div>
-
         <div style={{ ...fieldStyle, flex: 1 }}>
           <Text style={labelStyle}>Исполнитель</Text>
           <Select
@@ -168,6 +189,7 @@ export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
             placeholder="Кто"
             options={ASSIGNEE_OPTIONS}
             allowClear
+            size="large"
           />
         </div>
       </div>
@@ -184,22 +206,9 @@ export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
             color: "#888",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              marginBottom: values.screenshots.length ? 12 : 0,
-            }}
-          >
-            <span style={{ fontSize: 13 }}>
-              Ctrl+V / Cmd+V — вставить скриншот
-            </span>
-            <Button
-              size="small"
-              // icon={<UploadOutlined />}
-              onClick={() => fileInputRef.current?.click()}
-            >
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: values.screenshots.length ? 12 : 0 }}>
+            <span style={{ fontSize: 13 }}>Ctrl+V / Cmd+V — вставить скриншот</span>
+            <Button size="small" onClick={() => fileInputRef.current?.click()}>
               Загрузить файл
             </Button>
             <input
@@ -214,29 +223,16 @@ export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {values.screenshots.map((src, i) => (
               <div key={i} style={{ position: "relative" }}>
-                <img
-                  src={src}
-                  alt={`скриншот ${i + 1}`}
-                  style={{ height: 80, borderRadius: 4 }}
-                />
+                <img src={src} alt={`скриншот ${i + 1}`} style={{ width: 100, height: 100, objectFit: "cover", borderRadius: 6 }} />
                 <button
                   onClick={() => removeScreenshot(i)}
                   style={{
-                    position: "absolute",
-                    top: 2,
-                    right: 2,
-                    background: "rgba(0,0,0,0.6)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "50%",
-                    width: 18,
-                    height: 18,
-                    cursor: "pointer",
-                    fontSize: 10,
+                    position: "absolute", top: 2, right: 2,
+                    background: "rgba(0,0,0,0.6)", color: "white",
+                    border: "none", borderRadius: "50%",
+                    width: 18, height: 18, cursor: "pointer", fontSize: 10,
                   }}
-                >
-                  ✕
-                </button>
+                >✕</button>
               </div>
             ))}
           </div>

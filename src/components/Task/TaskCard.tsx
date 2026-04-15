@@ -1,28 +1,23 @@
 import { useState, useRef } from "react";
-import {
-  Modal,
-  Tag,
-  Image,
-  Button,
-  Input,
-  Select,
-  DatePicker,
-  Typography,
-} from "antd";
-// import { UploadOutlined } from "@ant-design/icons";
+import { Modal, Tag, Image, Button, Input, Select, DatePicker, Typography } from "antd";
 import dayjs from "dayjs";
-import type { Task, Priority, Assignee } from "../../types/Task";
-import type { CombinedStatus } from "../../types/TaskForm";
+import type { Task, Priority, Assignee, TaskStatus } from "../../types/Task";
 import { getDeadlineColor, formatDeadline } from "../../utils/deadline";
+import { renderWithLinks } from "../../utils/links";
 
 const { TextArea } = Input;
 const { Text } = Typography;
 
 const STATUS_OPTIONS = [
+  { value: "свободно", label: "🟢 Свободно" },
+  { value: "в_работе", label: "🔵 В работе" },
+  { value: "waiting_comment", label: "💬 Ждём коммента" },
+];
+
+const PRIORITY_OPTIONS = [
   { value: "high", label: "🔴 Высокий" },
   { value: "medium", label: "🟡 Средний" },
-  { value: "low", label: "🟢 Низкий" },
-  { value: "waiting_comment", label: "💬 Ждём коммента" },
+  { value: "low", label: "⚪ Низкий" },
 ];
 
 const ASSIGNEE_OPTIONS = [
@@ -31,20 +26,14 @@ const ASSIGNEE_OPTIONS = [
   { value: "Олег", label: "Олег" },
 ];
 
-const priorityColor = { low: "green", medium: "orange", high: "red" };
-const priorityLabel = { low: "🟢 Низкий", medium: "🟡 Средний", high: "🔴 Высокий" };
+const priorityColor = { low: "default", medium: "orange", high: "red" };
+const priorityLabel = { low: "⚪ Низкий", medium: "🟡 Средний", high: "🔴 Высокий" };
 
 const DISABLED_HOURS = [0, 1, 2, 3, 4, 5, 6, 7, 23];
-const DISABLED_MINUTES = Array.from({ length: 60 }, (_, i) => i).filter(
-  (m) => m !== 0,
-);
+const DISABLED_MINUTES = Array.from({ length: 60 }, (_, i) => i).filter((m) => m !== 0);
 
-const labelStyle = { fontSize: 13, color: "#aaa", marginBottom: 2 };
-const fieldStyle = {
-  display: "flex",
-  flexDirection: "column" as const,
-  gap: 2,
-};
+const labelStyle = { fontSize: 14, color: "#aaa", marginBottom: 4 };
+const fieldStyle = { display: "flex", flexDirection: "column" as const, gap: 4 };
 
 interface TaskCardProps {
   task: Task | null;
@@ -53,9 +42,6 @@ interface TaskCardProps {
 }
 
 export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
-  const getCombinedStatus = (t: Task): CombinedStatus =>
-    t.status === "waiting_comment" ? "waiting_comment" : (t.priority ?? "medium");
-
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(task?.title ?? "");
   const [description, setDescription] = useState(task?.description ?? "");
@@ -63,9 +49,8 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
   const [deadline, setDeadline] = useState<dayjs.Dayjs | null>(
     task?.deadline ? dayjs(task.deadline) : null,
   );
-  const [combinedStatus, setCombinedStatus] = useState<CombinedStatus>(
-    task ? getCombinedStatus(task) : "medium",
-  );
+  const [status, setStatus] = useState<TaskStatus>(task?.status ?? "свободно");
+  const [priority, setPriority] = useState<Priority | null>(task?.priority ?? null);
   const [assignee, setAssignee] = useState<Assignee | null>(task?.assignee ?? null);
   const [screenshots, setScreenshots] = useState<string[]>(task?.screenshots ?? []);
   const [titleError, setTitleError] = useState("");
@@ -78,7 +63,8 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
     setDescription(task.description ?? "");
     setTicketNumber(task.ticketNumber ?? "");
     setDeadline(task.deadline ? dayjs(task.deadline) : null);
-    setCombinedStatus(getCombinedStatus(task));
+    setStatus(task.status ?? "свободно");
+    setPriority(task.priority ?? null);
     setAssignee(task.assignee ?? null);
     setScreenshots(task.screenshots ?? []);
     setTitleError("");
@@ -90,19 +76,17 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
       setTitleError("Название задачи обязательно");
       return;
     }
-    const isWaiting = combinedStatus === "waiting_comment";
-    const saved = {
+    onSave({
       ...task,
       title: title.trim(),
-      description,
-      ticketNumber,
+      description: description || undefined,
+      ticketNumber: ticketNumber || undefined,
       deadline: deadline ? deadline.toISOString() : undefined,
-      priority: isWaiting ? undefined : (combinedStatus as Priority),
-      status: isWaiting ? ("waiting_comment" as const) : undefined,
+      status,
+      priority: priority ?? undefined,
       assignee: assignee ?? undefined,
       screenshots: screenshots.length > 0 ? screenshots : undefined,
-    };
-    onSave(saved);
+    });
     setIsEditing(false);
     setTitleError("");
   };
@@ -142,22 +126,19 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
     e.target.value = "";
   };
 
+  const taskStatus = task.status ?? "свободно";
+
   return (
     <Modal
       open={!!task}
-      onCancel={() => {
-        setIsEditing(false);
-        onClose();
-      }}
+      onCancel={() => { setIsEditing(false); onClose(); }}
       title={isEditing ? "Редактировать задачу" : task.title}
       width={700}
       footer={
         isEditing ? (
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
             <Button onClick={() => setIsEditing(false)}>Отмена</Button>
-            <Button type="primary" onClick={handleSave}>
-              Сохранить
-            </Button>
+            <Button type="primary" onClick={handleSave}>Сохранить</Button>
           </div>
         ) : (
           <Button onClick={handleEditClick}>Редактировать</Button>
@@ -165,8 +146,7 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
       }
     >
       {isEditing ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {/* Номер тикета */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <Input
             value={ticketNumber}
             onChange={(e) => setTicketNumber(e.target.value.replace(/\D/g, ""))}
@@ -176,140 +156,73 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
             style={ticketNumber ? { borderColor: "#4096ff", fontWeight: 600 } : undefined}
           />
 
-          {/* Название */}
           <div style={fieldStyle}>
-            <Text style={labelStyle}>
-              Название задачи <span style={{ color: "#ff4d4f" }}>*</span>
-            </Text>
+            <Text style={labelStyle}>Название <span style={{ color: "#ff4d4f" }}>*</span></Text>
             <Input
               value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                if (e.target.value.trim()) setTitleError("");
-              }}
-              placeholder="Кратко опишите задачу"
+              onChange={(e) => { setTitle(e.target.value); if (e.target.value.trim()) setTitleError(""); }}
+              size="large"
               status={titleError ? "error" : undefined}
             />
-            {titleError && (
-              <Text style={{ color: "#ff4d4f", fontSize: 12 }}>{titleError}</Text>
-            )}
+            {titleError && <Text style={{ color: "#ff4d4f", fontSize: 12 }}>{titleError}</Text>}
           </div>
 
-          {/* Описание */}
           <div style={fieldStyle}>
             <Text style={labelStyle}>Описание</Text>
             <TextArea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Подробности, контекст, ссылки"
-              rows={3}
+              rows={6}
+              style={{ resize: "vertical" }}
             />
           </div>
 
-          {/* Статус + Дедлайн + Исполнитель — горизонтально */}
           <div style={{ display: "flex", gap: 12 }}>
             <div style={{ ...fieldStyle, flex: 1 }}>
               <Text style={labelStyle}>Статус</Text>
-              <Select<CombinedStatus>
-                value={combinedStatus}
-                onChange={setCombinedStatus}
-                options={STATUS_OPTIONS}
-              />
+              <Select<TaskStatus> value={status} onChange={setStatus} options={STATUS_OPTIONS} size="large" />
             </div>
+            <div style={{ ...fieldStyle, flex: 1 }}>
+              <Text style={labelStyle}>Приоритет</Text>
+              <Select<Priority | null> value={priority} onChange={setPriority} options={PRIORITY_OPTIONS} placeholder="Не задан" allowClear size="large" />
+            </div>
+          </div>
 
+          <div style={{ display: "flex", gap: 12 }}>
             <div style={{ ...fieldStyle, flex: 1 }}>
               <Text style={labelStyle}>Дедлайн</Text>
               <DatePicker
                 value={deadline}
                 onChange={setDeadline}
-                showTime={{
-                  format: "HH",
-                  hideDisabledOptions: true,
-                  disabledTime: () => ({
-                    disabledHours: () => DISABLED_HOURS,
-                    disabledMinutes: () => DISABLED_MINUTES,
-                  }),
-                }}
+                showTime={{ format: "HH", hideDisabledOptions: true, disabledTime: () => ({ disabledHours: () => DISABLED_HOURS, disabledMinutes: () => DISABLED_MINUTES }) }}
                 format="DD.MM, HH:00"
                 placeholder="Дата"
                 inputReadOnly
+                size="large"
               />
             </div>
-
             <div style={{ ...fieldStyle, flex: 1 }}>
               <Text style={labelStyle}>Исполнитель</Text>
-              <Select
-                value={assignee}
-                onChange={setAssignee}
-                placeholder="Кто"
-                options={ASSIGNEE_OPTIONS}
-                allowClear
-              />
+              <Select value={assignee} onChange={setAssignee} placeholder="Кто" options={ASSIGNEE_OPTIONS} allowClear size="large" />
             </div>
           </div>
 
-          {/* Скриншоты */}
           <div style={fieldStyle}>
             <Text style={labelStyle}>Скриншоты</Text>
-            <div
-              onPaste={handlePaste}
-              style={{
-                border: "1px dashed #444",
-                borderRadius: 8,
-                padding: 16,
-                color: "#888",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  marginBottom: screenshots.length ? 12 : 0,
-                }}
-              >
-                <span style={{ fontSize: 13 }}>
-                  Ctrl+V / Cmd+V — вставить скриншот
-                </span>
-                <Button
-                  size="small"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  Загрузить файл
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  style={{ display: "none" }}
-                  onChange={handleFileUpload}
-                />
+            <div onPaste={handlePaste} style={{ border: "1px dashed #444", borderRadius: 8, padding: 16, color: "#888" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: screenshots.length ? 12 : 0 }}>
+                <span style={{ fontSize: 13 }}>Ctrl+V / Cmd+V — вставить скриншот</span>
+                <Button size="small" onClick={() => fileInputRef.current?.click()}>Загрузить файл</Button>
+                <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={handleFileUpload} />
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {screenshots.map((src, i) => (
                   <div key={i} style={{ position: "relative" }}>
-                    <img src={src} style={{ height: 80, borderRadius: 4 }} />
+                    <img src={src} style={{ width: 100, height: 100, objectFit: "cover", borderRadius: 6 }} />
                     <button
-                      onClick={() =>
-                        setScreenshots((prev) => prev.filter((_, idx) => idx !== i))
-                      }
-                      style={{
-                        position: "absolute",
-                        top: 2,
-                        right: 2,
-                        background: "rgba(0,0,0,0.6)",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "50%",
-                        width: 18,
-                        height: 18,
-                        cursor: "pointer",
-                        fontSize: 10,
-                      }}
-                    >
-                      ✕
-                    </button>
+                      onClick={() => setScreenshots((prev) => prev.filter((_, idx) => idx !== i))}
+                      style={{ position: "absolute", top: 2, right: 2, background: "rgba(0,0,0,0.6)", color: "white", border: "none", borderRadius: "50%", width: 18, height: 18, cursor: "pointer", fontSize: 10 }}
+                    >✕</button>
                   </div>
                 ))}
               </div>
@@ -317,37 +230,51 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
           </div>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             {task.ticketNumber && (
-              <Tag style={{ fontSize: 14, fontWeight: 600, padding: "2px 10px" }}>
-                #{task.ticketNumber}
-              </Tag>
+              <Tag style={{ fontSize: 15, fontWeight: 600, padding: "3px 12px" }}>#{task.ticketNumber}</Tag>
             )}
-            {task.status === "waiting_comment" ? (
-              <Tag color="default">💬 Ждём коммента</Tag>
-            ) : (
-              task.priority && (
-                <Tag color={priorityColor[task.priority]}>
-                  {priorityLabel[task.priority]}
-                </Tag>
-              )
+            {taskStatus === "свободно" && <Tag color="success" style={{ fontSize: 14 }}>🟢 Свободно</Tag>}
+            {taskStatus === "в_работе" && <Tag color="processing" style={{ fontSize: 14 }}>🔵 В работе</Tag>}
+            {taskStatus === "waiting_comment" && <Tag style={{ fontSize: 14 }}>💬 Ждём коммента</Tag>}
+            {task.priority && (
+              <Tag color={priorityColor[task.priority]} style={{ fontSize: 14 }}>{priorityLabel[task.priority]}</Tag>
             )}
-            {task.assignee && <Tag color="blue">{task.assignee}</Tag>}
+            {task.assignee && <Tag color="blue" style={{ fontSize: 14 }}>{task.assignee}</Tag>}
             {task.deadline && (
-              <Tag color={getDeadlineColor(task.deadline)}>
-                ⏰ {formatDeadline(task.deadline)}
-              </Tag>
+              <Tag color={getDeadlineColor(task.deadline)} style={{ fontSize: 14 }}>⏰ {formatDeadline(task.deadline)}</Tag>
             )}
           </div>
-          {task.description && <p style={{ margin: 0 }}>{task.description}</p>}
+
+          {task.history && task.history.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {task.history.map((entry, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 11, color: "#555", whiteSpace: "nowrap", marginTop: 3, minWidth: 90 }}>
+                    {new Date(entry.date).toLocaleDateString("ru", {
+                      day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+                    })}
+                  </span>
+                  <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                    {renderWithLinks(entry.text)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : task.description ? (
+            <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+              {renderWithLinks(task.description)}
+            </p>
+          ) : null}
+
           {task.screenshots && task.screenshots.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {task.screenshots.map((src, i) => (
                 <Image
                   key={i}
                   src={src}
-                  style={{ height: 120, objectFit: "cover", borderRadius: 4 }}
+                  style={{ width: 140, height: 140, objectFit: "cover", borderRadius: 6 }}
                 />
               ))}
             </div>

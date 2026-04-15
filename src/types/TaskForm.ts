@@ -1,14 +1,13 @@
 import dayjs from "dayjs";
 import type { Priority, Assignee, TaskStatus } from "./Task";
 
-export type CombinedStatus = Priority | TaskStatus;
-
 export interface TaskFormValues {
   title: string;
   description: string;
   ticketNumber: string;
   deadline: dayjs.Dayjs | null;
-  combinedStatus: CombinedStatus;
+  status: TaskStatus;
+  priority: Priority | null;
   assignee: Assignee | null;
   screenshots: string[];
 }
@@ -18,7 +17,8 @@ export const emptyForm: TaskFormValues = {
   description: "",
   ticketNumber: "",
   deadline: null,
-  combinedStatus: "medium",
+  status: "свободно",
+  priority: null,
   assignee: null,
   screenshots: [],
 };

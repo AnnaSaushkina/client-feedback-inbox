@@ -48,18 +48,18 @@ export default function TaskSection({
 
   if (tasks.length === 0) {
     return (
-      <Card title={title} style={{ marginBottom: 16 }}>
-        <p>Список пуст</p>
+      <Card title={title} style={{ marginBottom: 20 }} styles={{ header: { fontSize: 17, fontWeight: 600 } }}>
+        <p style={{ color: "#888", margin: 0 }}>Список пуст</p>
       </Card>
     );
   }
 
   return (
-    <Card title={title} style={{ marginBottom: 16 }}>
+    <Card title={title} style={{ marginBottom: 20 }} styles={{ header: { fontSize: 17, fontWeight: 600 } }}>
       {otherTasks.length > 0 && <div>{otherTasks.map(renderTask)}</div>}
       {tomorrowTasks.length > 0 && (
         <>
-          <p style={{ color: "#888", fontSize: 12, margin: "8px 0 4px" }}>
+          <p style={{ color: "#888", fontSize: 13, margin: "10px 0 4px" }}>
             — Завтра
           </p>
           <div>{tomorrowTasks.map(renderTask)}</div>
