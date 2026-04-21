@@ -16,10 +16,12 @@
     "server:start": "pnpm --filter server start"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.11.2",
     "antd": "^6.3.1",
     "dayjs": "^1.11.19",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "react-redux": "^9.2.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
