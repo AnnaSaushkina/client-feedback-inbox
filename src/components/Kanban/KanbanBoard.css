@@ -1,0 +1,29 @@
+.kanban-board {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  touch-action: pan-y;
+}
+
+.kanban-board * {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Планшет: колонки сужаются, но остаются в ряд */
+@media (max-width: 900px) {
+  .kanban-board {
+    gap: 10px;
+  }
+}
+
+/* Мобильные: колонки складываются вертикально */
+@media (max-width: 640px) {
+  .kanban-board {
+    flex-direction: column;
+  }
+
+  .kanban-column {
+    width: 100%;
+    min-width: unset !important;
+  }
+}
