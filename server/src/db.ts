@@ -2,7 +2,8 @@ import fs from "fs";
 
 const dbPath = process.env.DB_PATH || "./tasks.json";
 
-export function readTasks(): unknown[] {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function readTasks(): any[] {
   try {
     return JSON.parse(fs.readFileSync(dbPath, "utf-8"));
   } catch {
@@ -10,7 +11,8 @@ export function readTasks(): unknown[] {
   }
 }
 
-export function writeTasks(tasks: unknown[]): void {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function writeTasks(tasks: any[]): void {
   fs.writeFileSync(dbPath, JSON.stringify(tasks));
 }
 
