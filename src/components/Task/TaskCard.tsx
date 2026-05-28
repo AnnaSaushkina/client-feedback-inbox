@@ -10,12 +10,10 @@ import {
   Typography,
 } from "antd";
 import dayjs from "dayjs";
-import type { Task, Priority, TaskStatus } from "../../types/Task";
-import { getDeadlineColor, formatDeadline } from "../../utils/deadline";
-import { renderWithLinks } from "../../utils/links";
-import { readImageFiles, getImagesFromClipboard } from "../../utils/screenshots";
-import { STATUS_OPTIONS, PRIORITY_OPTIONS } from "../../constants/taskOptions";
-import { useAssignees } from "../../contexts/AssigneesContext";
+import type { Task, Priority, TaskStatus } from "../../types";
+import { getDeadlineColor, formatDeadline, renderWithLinks, readImageFiles, getImagesFromClipboard } from "../../utils";
+import { STATUS_OPTIONS, PRIORITY_OPTIONS } from "../../constants";
+import { useAssignees } from "../../contexts";
 import AssigneeManager from "../Assignees/AssigneeManager";
 
 const { TextArea } = Input;

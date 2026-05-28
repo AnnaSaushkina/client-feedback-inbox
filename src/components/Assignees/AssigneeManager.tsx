@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Modal, Button, Input, Space, Typography, Popconfirm } from "antd";
-import { useAssignees } from "../../contexts/AssigneesContext";
+import { useAssignees } from "../../contexts";
 
 const { Text } = Typography;
 

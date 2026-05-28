@@ -1,8 +1,8 @@
 import { memo } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { Tag, Typography } from "antd";
-import type { Task } from "../../types/Task";
-import { getDeadlineColor, formatDeadline } from "../../utils/deadline";
+import type { Task } from "../../types";
+import { getDeadlineColor, formatDeadline } from "../../utils";
 
 const { Text } = Typography;
 

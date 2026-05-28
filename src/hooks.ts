@@ -1,7 +1,25 @@
 import { useEffect, useRef } from "react";
-import { useSelector } from "react-redux";
-import { selectTasks } from "../store/tasksSlice";
-import type { Task } from "../types/Task";
+import { useSelector, useDispatch } from "react-redux";
+import { io as connectSocket } from "socket.io-client";
+import type { AppDispatch } from "./store";
+import { fetchTasks, USE_API, selectTasks } from "./store";
+import type { Task } from "./types";
+import { useSoundSettings } from "./contexts";
+
+// --- useSocket ---
+
+export function useSocket() {
+  const dispatch = useDispatch<AppDispatch>();
+
+  useEffect(() => {
+    if (!USE_API) return;
+    const socket = connectSocket(new URL(import.meta.env.VITE_API_URL).origin);
+    socket.on("tasks:update", () => { dispatch(fetchTasks()); });
+    return () => { socket.disconnect(); };
+  }, [dispatch]);
+}
+
+// --- useTaskSound ---
 
 function playChime(freq1: number, freq2: number, volume: number, duration: number) {
   try {
@@ -17,14 +35,11 @@ function playChime(freq1: number, freq2: number, volume: number, duration: numbe
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
     osc.start();
     osc.stop(ctx.currentTime + duration);
-  } catch {
-    // AudioContext недоступен
-  }
+  } catch {}
 }
 
-// Новая задача: C5 → E5, громко
 const playNewTask = () => playChime(523, 659, 0.6, 0.8);
-// Переход в тестирование: E5 → G5 → C6, чуть тише и мягче
+
 const playTesting = () => {
   try {
     const ctx = new AudioContext();
@@ -32,7 +47,6 @@ const playTesting = () => {
     gain.connect(ctx.destination);
     gain.gain.setValueAtTime(0.45, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.0);
-
     const notes = [659, 784, 1047];
     notes.forEach((freq, i) => {
       const osc = ctx.createOscillator();
@@ -42,34 +56,32 @@ const playTesting = () => {
       osc.start(ctx.currentTime + i * 0.18);
       osc.stop(ctx.currentTime + i * 0.18 + 0.5);
     });
-  } catch {
-    // AudioContext недоступен
-  }
+  } catch {}
 };
 
 export function useTaskSound() {
   const tasks = useSelector(selectTasks);
+  const { muted } = useSoundSettings();
   const prevTasksRef = useRef<Task[] | null>(null);
 
   useEffect(() => {
     const prev = prevTasksRef.current;
     prevTasksRef.current = tasks;
     if (prev === null) return;
+    if (muted) return;
 
     const prevActive = prev.filter((t) => !t.completed);
     const currActive = tasks.filter((t) => !t.completed);
 
-    // Новая задача добавлена
     if (currActive.length > prevActive.length) {
       playNewTask();
       return;
     }
 
-    // Задача перешла в тестирование
     const movedToTesting = currActive.some((t) => {
       const was = prevActive.find((p) => p.id === t.id);
       return t.status === "тестирование" && was?.status !== "тестирование";
     });
     if (movedToTesting) playTesting();
-  }, [tasks]);
+  }, [tasks, muted]);
 }

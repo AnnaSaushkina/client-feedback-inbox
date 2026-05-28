@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Modal } from "antd";
-import type { Task } from "../../types/Task";
-import { type TaskFormValues, emptyForm } from "../../types/TaskForm";
+import type { Task } from "../../types";
+import { type TaskFormValues, emptyForm } from "../../types";
 import TaskForm from "./TaskForm";
 
 interface TaskEditorProps {

@@ -9,8 +9,8 @@ import dayjs from "dayjs";
 import "dayjs/locale/ru";
 
 import { Provider } from "react-redux";
-import { store } from "./store/index.ts";
-import { AssigneesProvider } from "./contexts/AssigneesContext";
+import { store } from "./store";
+import { AssigneesProvider, SoundProvider } from "./contexts";
 
 dayjs.locale("ru");
 
@@ -23,9 +23,11 @@ createRoot(document.getElementById("root")!).render(
       }}
     >
       <Provider store={store}>
-        <AssigneesProvider>
-          <App />
-        </AssigneesProvider>
+        <SoundProvider>
+          <AssigneesProvider>
+            <App />
+          </AssigneesProvider>
+        </SoundProvider>
       </Provider>
     </ConfigProvider>
   </StrictMode>,

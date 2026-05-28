@@ -12,10 +12,10 @@ import {
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { useSelector, useDispatch } from "react-redux";
 import { message } from "antd";
-import type { AppDispatch } from "../../store/index";
-import { selectTasks, updateTask } from "../../store/tasksSlice";
-import type { Task, TaskStatus } from "../../types/Task";
-import { isValidTransition, TRANSITION_BLOCK_REASON } from "../../constants/taskTransitions";
+import type { AppDispatch } from "../../store";
+import { selectTasks, updateTask } from "../../store";
+import type { Task, TaskStatus } from "../../types";
+import { isValidTransition, TRANSITION_BLOCK_REASON } from "../../constants";
 import KanbanColumn from "./KanbanColumn";
 import type { ColumnValidity } from "./KanbanColumn";
 import KanbanCard from "./KanbanCard";

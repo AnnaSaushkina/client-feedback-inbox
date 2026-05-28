@@ -1,6 +1,7 @@
-import { createSlice, createAsyncThunk, isAnyOf } from "@reduxjs/toolkit";
-import type { Task } from "../types/Task";
-import * as api from "../api/tasks";
+import { createSlice, createAsyncThunk, isAnyOf, configureStore } from "@reduxjs/toolkit";
+import type { Middleware } from "@reduxjs/toolkit";
+import type { Task } from "./types";
+import * as api from "./api";
 
 export const USE_API = !!import.meta.env.VITE_API_URL;
 const STORAGE_KEY = "tasks";
@@ -37,7 +38,6 @@ type TasksRootState = { tasks: TasksState };
 const getTaskById = (state: TasksRootState, id: string) =>
   state.tasks.items.find((t) => t.id === id)!;
 
-// объединение дублирующего тикета — склеивает описания, дополняет историю
 function mergeTask(existing: Task, incoming: Task): Task {
   const mergedDescription = [existing.description, incoming.description]
     .filter(Boolean)
@@ -53,89 +53,73 @@ function mergeTask(existing: Task, incoming: Task): Task {
   };
 }
 
-// загрузка
 export const fetchTasks = createAsyncThunk<Task[]>("tasks/fetch", () =>
   USE_API ? api.getTasks().catch(() => loadFromStorage()) : Promise.resolve(loadFromStorage()),
 );
 
 type AddTaskResult = { type: "create" | "update"; task: Task };
 
-// создание или объединение по номеру тикета
-export const addTask = createAsyncThunk<
-  AddTaskResult,
-  Task,
-  { state: TasksRootState }
->("tasks/add", async (task, { getState }) => {
-  const tasks = getState().tasks.items;
-
-  if (task.ticketNumber) {
-    const existing = tasks.find(
-      (t) => t.ticketNumber === task.ticketNumber && !t.completed,
-    );
-    if (existing) {
-      const merged = mergeTask(existing, task);
-      const saved = USE_API ? await api.updateTask(merged) : merged;
-      return { type: "update", task: saved };
+export const addTask = createAsyncThunk<AddTaskResult, Task, { state: TasksRootState }>(
+  "tasks/add",
+  async (task, { getState }) => {
+    const tasks = getState().tasks.items;
+    if (task.ticketNumber) {
+      const existing = tasks.find((t) => t.ticketNumber === task.ticketNumber && !t.completed);
+      if (existing) {
+        const merged = mergeTask(existing, task);
+        const saved = USE_API ? await api.updateTask(merged) : merged;
+        return { type: "update", task: saved };
+      }
     }
-  }
+    const newTask: Task = {
+      ...task,
+      id: generateId(),
+      history: task.description ? [{ text: task.description, date: now() }] : [],
+    };
+    const saved = USE_API ? await api.createTask(newTask) : newTask;
+    return { type: "create", task: saved };
+  },
+);
 
-  const newTask: Task = {
-    ...task,
-    id: generateId(),
-    history: task.description ? [{ text: task.description, date: now() }] : [],
-  };
-  const saved = USE_API ? await api.createTask(newTask) : newTask;
-  return { type: "create", task: saved };
-});
-
-// обновление
 export const updateTask = createAsyncThunk<Task, Task>(
   "tasks/update",
   (task) => USE_API ? api.updateTask(task) : Promise.resolve(task),
 );
 
-// удаление
-export const deleteTask = createAsyncThunk<string, string>(
-  "tasks/delete",
-  async (id) => {
-    if (USE_API) await api.deleteTask(id);
-    return id;
+export const deleteTask = createAsyncThunk<string, string>("tasks/delete", async (id) => {
+  if (USE_API) await api.deleteTask(id);
+  return id;
+});
+
+export const toggleTask = createAsyncThunk<Task, string, { state: TasksRootState }>(
+  "tasks/toggle",
+  async (id, { getState }) => {
+    const task = getTaskById(getState(), id);
+    const completing = !task.completed;
+    if (USE_API) {
+      const updated = await api.toggleTask(id);
+      return { ...updated, completedAt: completing ? now() : undefined };
+    }
+    return { ...task, completed: completing, completedAt: completing ? now() : undefined };
   },
 );
 
-// переключение статуса выполнения
-export const toggleTask = createAsyncThunk<
-  Task,
-  string,
-  { state: TasksRootState }
->("tasks/toggle", async (id, { getState }) => {
-  const task = getTaskById(getState(), id);
-  const completing = !task.completed;
-  if (USE_API) {
-    const updated = await api.toggleTask(id);
-    return { ...updated, completedAt: completing ? now() : undefined };
-  }
-  return { ...task, completed: completing, completedAt: completing ? now() : undefined };
-});
-
-// разархивирование
-export const restoreFromArchive = createAsyncThunk<
-  Task,
-  string,
-  { state: TasksRootState }
->("tasks/restore", async (id, { getState }) => {
-  const restored: Task = {
-    ...getTaskById(getState(), id),
-    completed: false,
-    completedAt: undefined,
-    status: "в_работе",
-  };
-  if (USE_API) {
-    const updated = await api.updateTask(restored);
-    return { ...updated, completed: false, completedAt: undefined };
-  }
-  return restored;
-});
+export const restoreFromArchive = createAsyncThunk<Task, string, { state: TasksRootState }>(
+  "tasks/restore",
+  async (id, { getState }) => {
+    const restored: Task = {
+      ...getTaskById(getState(), id),
+      completed: false,
+      completedAt: undefined,
+      status: "в_работе",
+    };
+    if (USE_API) {
+      const updated = await api.updateTask(restored);
+      return { ...updated, completed: false, completedAt: undefined };
+    }
+    return restored;
+  },
+);
 
 const tasksSlice = createSlice({
   name: "tasks",
@@ -143,9 +127,7 @@ const tasksSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchTasks.pending, (state) => {
-        state.loading = true;
-      })
+      .addCase(fetchTasks.pending, (state) => { state.loading = true; })
       .addCase(fetchTasks.fulfilled, (state, action) => {
         state.loading = false;
         state.items = action.payload;
@@ -183,4 +165,25 @@ export const isTaskMutationAction = isAnyOf(
   restoreFromArchive.fulfilled,
 );
 
+export const tasksReducer = tasksSlice.reducer;
 export default tasksSlice.reducer;
+
+const localStorageMiddleware: Middleware =
+  ({ getState }) =>
+  (next) =>
+  (action) => {
+    const result = next(action);
+    if (isTaskMutationAction(action)) {
+      saveToStorage((getState() as { tasks: { items: Task[] } }).tasks.items);
+    }
+    return result;
+  };
+
+export const store = configureStore({
+  reducer: { tasks: tasksReducer },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(localStorageMiddleware),
+});
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;

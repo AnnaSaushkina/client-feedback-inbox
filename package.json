@@ -13,7 +13,6 @@
     "deploy:all": "bash deploy.sh",
     "test": "vitest",
     "test:e2e": "playwright test",
-    "test:load": "k6 run load-test/api.js",
     "server": "pnpm --filter server dev",
     "server:start": "pnpm --filter server start"
   },
@@ -51,6 +50,7 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1",
+    "vite-plugin-pwa": "^1.3.0",
     "vitest": "^4.0.18"
   }
 }

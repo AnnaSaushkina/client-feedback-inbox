@@ -7,8 +7,8 @@ import tasksReducer, {
   toggleTask,
   restoreFromArchive,
   type TasksState,
-} from "../store/tasksSlice";
-import type { Task } from "../types/Task.tsx";
+} from "../store";
+import type { Task } from "../types";
 
 const initialState: TasksState = { items: [], loading: false };
 

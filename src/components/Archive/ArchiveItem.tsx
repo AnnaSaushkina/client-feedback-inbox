@@ -1,7 +1,7 @@
 import { Button, Tag, Typography, Popconfirm } from "antd";
 import { CloseOutlined } from "@ant-design/icons";
-import type { Task } from "../../types/Task";
-import { renderWithLinks } from "../../utils/links";
+import type { Task } from "../../types";
+import { renderWithLinks } from "../../utils";
 
 const { Text } = Typography;
 

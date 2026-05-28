@@ -1,6 +1,17 @@
-import type { TaskStatus } from "../types/Task";
+import type { TaskStatus } from "./types";
 
-// свободно ↔ в_работе ↔ waiting_comment, в_работе ↔ тестирование
+export const STATUS_OPTIONS = [
+  { value: "свободно", label: "🟢 Можно взять в работу" },
+  { value: "в_работе", label: "🔵 В работе" },
+  { value: "waiting_comment", label: "💬 Ждём с ОС" },
+  { value: "тестирование", label: "✅ Сделано. Тестируется" },
+];
+
+export const PRIORITY_OPTIONS = [
+  { value: "high", label: "🔴 Высокий" },
+  { value: "low", label: "⚪ Низкий" },
+];
+
 export const VALID_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
   свободно:        ["в_работе"],
   в_работе:        ["свободно", "waiting_comment", "тестирование"],

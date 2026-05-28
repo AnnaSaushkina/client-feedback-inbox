@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Button, Typography, Tag, Tooltip, Popconfirm } from "antd";
-import type { Task } from "../../types/Task";
-import { getDeadlineColor, formatDeadline } from "../../utils/deadline";
-import { renderWithLinks } from "../../utils/links";
+import type { Task } from "../../types";
+import { getDeadlineColor, formatDeadline, renderWithLinks } from "../../utils";
 
 const { Text } = Typography;
 
@@ -164,7 +163,7 @@ export default function BoardItem({
           {isDone ? (
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <Text type="secondary">—</Text>
-              <Text style={{ fontSize: 16 }}>{task.ticketNumber || task.title}</Text>
+              <Text style={{ fontSize: 16, whiteSpace: "nowrap" }}>{task.ticketNumber || task.title}</Text>
               {shortDescription && (
                 <Text type="secondary" style={{ fontSize: 13 }}>
                   {shortDescription}

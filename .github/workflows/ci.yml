@@ -121,6 +121,7 @@ jobs:
         run: pnpm build
         env:
           VITE_API_URL: "http://${{ secrets.VPS_HOST }}/api"
+          VITE_PASSWORD: ${{ secrets.PROD_PASSWORD }}
 
       - name: Upload frontend (prod)
         uses: appleboy/scp-action@v0.1.7

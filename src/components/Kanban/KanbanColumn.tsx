@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { Typography } from "antd";
-import type { Task, TaskStatus } from "../../types/Task";
+import type { Task, TaskStatus } from "../../types";
 import KanbanCard from "./KanbanCard";
 
 const { Text } = Typography;

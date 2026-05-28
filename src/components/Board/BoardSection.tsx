@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Card } from "antd";
-import type { Task } from "../../types/Task";
+import type { Task } from "../../types";
 import TaskItem from "./BoardItem";
 
 interface TaskSectionProps {

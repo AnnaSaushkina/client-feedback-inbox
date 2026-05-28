@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import type { AppDispatch } from "../store/index";
+import type { AppDispatch } from "../store";
 import {
   fetchTasks,
   addTask,
@@ -9,17 +9,25 @@ import {
   toggleTask,
   restoreFromArchive,
   selectTasks,
-} from "../store/tasksSlice";
+} from "../store";
 import { Button, message, Typography, Card, Collapse, Segmented } from "antd";
+import { SoundOutlined, AudioMutedOutlined, TeamOutlined, DownloadOutlined } from "@ant-design/icons";
 import TaskSection from "../components/Board/BoardSection";
 import ArchiveItem from "../components/Archive/ArchiveItem";
 import KanbanBoard from "../components/Kanban/KanbanBoard";
-import type { Task } from "../types/Task";
+import AssigneeManager from "../components/Assignees/AssigneeManager";
+import type { Task } from "../types";
+import { useSoundSettings } from "../contexts";
 
 const TaskEditor = lazy(() => import("../components/Task/TaskEditor"));
 const TaskCard = lazy(() => import("../components/Task/TaskCard"));
 
 const { Text } = Typography;
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
 
 const STATUS_ORDER: Record<string, number> = {
   свободно: 0,
@@ -63,9 +71,29 @@ export default function AppLayout() {
     dispatch(fetchTasks());
   }, [dispatch]);
 
+  const { muted, toggleMuted } = useSoundSettings();
+
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [view, setView] = useState<"board" | "kanban">("board");
+  const [assigneeManagerOpen, setAssigneeManagerOpen] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e as BeforeInstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === "accepted") setInstallPrompt(null);
+  };
 
   const copyText = (text: string): boolean => {
     const textarea = document.createElement("textarea");
@@ -149,6 +177,26 @@ export default function AppLayout() {
         <Button size="large" onClick={() => setIsEditorOpen(true)}>
           Добавить задачу +
         </Button>
+        <Button
+          size="large"
+          icon={muted ? <AudioMutedOutlined /> : <SoundOutlined />}
+          onClick={toggleMuted}
+          title={muted ? "Включить звук" : "Выключить звук"}
+        />
+        <Button
+          size="large"
+          icon={<TeamOutlined />}
+          onClick={() => setAssigneeManagerOpen(true)}
+          title="Управление исполнителями"
+        />
+        {installPrompt && (
+          <Button
+            size="large"
+            icon={<DownloadOutlined />}
+            onClick={handleInstall}
+            title="Установить приложение"
+          />
+        )}
         <Segmented
           value={view}
           onChange={(v) => setView(v as "board" | "kanban")}
@@ -228,6 +276,8 @@ export default function AppLayout() {
           ]}
         />
       )}
+
+      <AssigneeManager open={assigneeManagerOpen} onClose={() => setAssigneeManagerOpen(false)} />
 
       <Suspense fallback={null}>
         <TaskEditor
