@@ -58,6 +58,7 @@ export function AssigneesProvider({ children }: { children: ReactNode }) {
   return <AssigneesCtxRef.Provider value={{ assignees, add, rename, remove }}>{children}</AssigneesCtxRef.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAssignees(): AssigneesCtx {
   const ctx = useContext(AssigneesCtxRef);
   if (!ctx) throw new Error("useAssignees must be used within AssigneesProvider");
@@ -89,6 +90,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   return <SoundCtxRef.Provider value={{ muted, toggleMuted }}>{children}</SoundCtxRef.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSoundSettings(): SoundCtx {
   const ctx = useContext(SoundCtxRef);
   if (!ctx) throw new Error("useSoundSettings must be used within SoundProvider");

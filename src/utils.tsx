@@ -40,7 +40,9 @@ export function renderWithLinks(text: string): React.ReactNode[] {
     let shortText = url;
     try {
       shortText = new URL(url).hostname.replace(/^www\./, "");
-    } catch {}
+    } catch {
+      // невалидный URL — оставляем полный текст
+    }
     parts.push(
       <a
         key={match.index}

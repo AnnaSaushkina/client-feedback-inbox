@@ -173,7 +173,7 @@ describe("граф переходов статусов", () => {
   it("граф симметричен только для разрешённых рёбер", () => {
     for (const [from, targets] of Object.entries(VALID_TRANSITIONS)) {
       for (const to of targets) {
-        expect(isValidTransition(from as any, to)).toBe(true);
+        expect(isValidTransition(from as import("../types").TaskStatus, to)).toBe(true);
       }
     }
   });

@@ -35,7 +35,9 @@ function playChime(freq1: number, freq2: number, volume: number, duration: numbe
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
     osc.start();
     osc.stop(ctx.currentTime + duration);
-  } catch {}
+  } catch {
+    // AudioContext недоступен
+  }
 }
 
 const playNewTask = () => playChime(523, 659, 0.6, 0.8);
@@ -56,7 +58,9 @@ const playTesting = () => {
       osc.start(ctx.currentTime + i * 0.18);
       osc.stop(ctx.currentTime + i * 0.18 + 0.5);
     });
-  } catch {}
+  } catch {
+    // AudioContext недоступен
+  }
 };
 
 export function useTaskSound() {

@@ -2,7 +2,7 @@ import fs from "fs";
 
 const dbPath = process.env.DB_PATH || "./tasks.json";
 
-export function readTasks(): any[] {
+export function readTasks(): unknown[] {
   try {
     return JSON.parse(fs.readFileSync(dbPath, "utf-8"));
   } catch {
@@ -10,7 +10,7 @@ export function readTasks(): any[] {
   }
 }
 
-export function writeTasks(tasks: any[]): void {
+export function writeTasks(tasks: unknown[]): void {
   fs.writeFileSync(dbPath, JSON.stringify(tasks));
 }
 
