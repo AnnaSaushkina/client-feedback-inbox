@@ -25,9 +25,10 @@ const COLUMNS: TaskStatus[] = ["свободно", "в_работе", "waiting_c
 interface KanbanBoardProps {
   onOpen: (task: Task) => void;
   onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
-export default function KanbanBoard({ onOpen, onToggle }: KanbanBoardProps) {
+export default function KanbanBoard({ onOpen, onToggle, onDelete }: KanbanBoardProps) {
   const dispatch = useDispatch<AppDispatch>();
   const tasks = useSelector(selectTasks);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -98,13 +99,14 @@ export default function KanbanBoard({ onOpen, onToggle }: KanbanBoardProps) {
             tasks={tasksByColumn[status]}
             onOpen={onOpen}
             onToggle={onToggle}
+            onDelete={onDelete}
             validity={columnValidity(status)}
           />
         ))}
       </div>
 
       <DragOverlay>
-        {activeTask && <KanbanCard task={activeTask} onOpen={onOpen} onToggle={onToggle} />}
+        {activeTask && <KanbanCard task={activeTask} onOpen={onOpen} onToggle={onToggle} onDelete={onDelete} />}
       </DragOverlay>
     </DndContext>
   );

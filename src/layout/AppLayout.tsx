@@ -121,6 +121,7 @@ export default function AppLayout() {
       <KanbanBoard
         onOpen={setSelectedTask}
         onToggle={(id) => dispatch(toggleTask(id))}
+        onDelete={(id) => dispatch(deleteTask(id))}
       />
 
       {/* Выполнено сегодня */}

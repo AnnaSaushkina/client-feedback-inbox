@@ -17,6 +17,7 @@ const defaultProps = {
   task,
   onOpen: vi.fn(),
   onToggle: vi.fn(),
+  onDelete: vi.fn(),
 };
 
 // DndContext нужен потому что KanbanCard использует useDraggable внутри
