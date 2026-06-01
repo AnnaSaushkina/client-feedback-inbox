@@ -1,11 +1,12 @@
 import Database from "better-sqlite3";
 import fs from "fs";
 
-const dbPath = (process.env.DB_PATH || "./tasks.db").replace(/\.json$/, ".db");
+const dbPath = process.env.DB_PATH || "./tasks.db";
+
+// Путь к старому JSON-файлу для однократной миграции
 const legacyPath = dbPath.replace(/\.db$/, ".json");
 
 const db = new Database(dbPath);
-
 db.exec(`CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
 
 // Однократная миграция из tasks.json если таблица пустая
@@ -35,5 +36,5 @@ export function writeTasks(tasks: any[]): void {
 }
 
 export async function initDb(): Promise<void> {
-  // SQLite инициализируется синхронно выше — функция оставлена для совместимости
+  // SQLite инициализируется синхронно выше
 }

@@ -71,32 +71,35 @@ jobs:
       - name: Build server
         run: |
           cd server && pnpm install --frozen-lockfile && pnpm run build
-          tar -czf server-dist.tar.gz -C server/dist .
+          tar -czf server-update.tar.gz -C server dist package.json
 
-      - name: Upload server dist
+      - name: Upload server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: server-dist.tar.gz
+          source: server-update.tar.gz
           target: /tmp/
 
-      - name: Restart servers (pm2)
+      - name: Install deps and restart servers
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            apt-get install -y build-essential python3 2>/dev/null || true
             for dir in /root/task-manager-server /root/task-manager-test; do
-              rm -rf "$dir/dist" && mkdir -p "$dir/dist"
-              tar -xzf /tmp/server-dist.tar.gz -C "$dir/dist"
+              mkdir -p "$dir"
+              tar -xzf /tmp/server-update.tar.gz -C "$dir"
+              (cd "$dir" && npm install --omit=dev --silent)
             done
+            rm -f /tmp/server-update.tar.gz
             pm2 delete task-manager task-manager-test 2>/dev/null || true
-            PORT=3000 DB_PATH=/root/task-manager-server/tasks.json \
+            PORT=3000 DB_PATH=/root/task-manager-server/tasks.db \
               pm2 start /root/task-manager-server/dist/index.js --name task-manager
-            PORT=3001 DB_PATH=/root/task-manager-test/tasks-test.json \
+            PORT=3001 DB_PATH=/root/task-manager-test/tasks-test.db \
               pm2 start /root/task-manager-test/dist/index.js --name task-manager-test
             pm2 save
 

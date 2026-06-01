@@ -9,22 +9,36 @@ cd "$(dirname "$0")"
 
 echo "=== [1/5] Сборка сервера ==="
 (cd server && pnpm install --frozen-lockfile && pnpm run build)
-tar -czf /tmp/server-dist.tar.gz -C server/dist .
+
+# Пакуем dist/ + package.json вместе — чтобы npm install на VPS знал зависимости
+tar -czf /tmp/server-update.tar.gz -C server dist package.json
 
 echo "=== [2/5] Деплой сервера ==="
-scp /tmp/server-dist.tar.gz $VPS:/tmp/
-ssh $VPS '
+scp /tmp/server-update.tar.gz $VPS:/tmp/
+
+ssh $VPS bash << 'ENDSSH'
+  set -e
+
+  # Установить build-tools если нет (нужно для компиляции better-sqlite3)
+  apt-get install -y build-essential python3 2>/dev/null || true
+
+  # Обновить dist и установить зависимости для обоих стендов
   for dir in /root/task-manager-server /root/task-manager-test; do
-    rm -rf "$dir/dist" && mkdir -p "$dir/dist"
-    tar -xzf /tmp/server-dist.tar.gz -C "$dir/dist"
+    mkdir -p "$dir"
+    tar -xzf /tmp/server-update.tar.gz -C "$dir"
+    (cd "$dir" && npm install --omit=dev --silent)
   done
+
+  rm -f /tmp/server-update.tar.gz
+
+  # Перезапустить (или запустить если первый раз)
   pm2 delete task-manager task-manager-test 2>/dev/null || true
-  PORT=3000 DB_PATH=/root/task-manager-server/tasks.json \
+  PORT=3000 DB_PATH=/root/task-manager-server/tasks.db \
     pm2 start /root/task-manager-server/dist/index.js --name task-manager
-  PORT=3001 DB_PATH=/root/task-manager-test/tasks-test.json \
+  PORT=3001 DB_PATH=/root/task-manager-test/tasks-test.db \
     pm2 start /root/task-manager-test/dist/index.js --name task-manager-test
   pm2 save
-'
+ENDSSH
 echo "✓ Серверы запущены"
 
 echo "=== [3/5] GitHub Pages ==="
@@ -43,7 +57,7 @@ scp -r dist/* $VPS:/var/www/html/
 echo "✓ Прод"
 
 echo ""
-echo "Готово. Стенды:"
+echo "Готово:"
 echo "  GitHub Pages : https://annasaushkina.github.io/client-feedback-inbox/"
 echo "  Тест         : http://$VPS_HOST:8080"
 echo "  Прод         : http://$VPS_HOST"
