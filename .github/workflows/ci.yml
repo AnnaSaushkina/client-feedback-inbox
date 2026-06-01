@@ -21,7 +21,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
-      - run: pnpm test --run
+      - run: pnpm --filter client-feedback-inbox test --run
 
   # ── GitHub Pages (localStorage, без бэкенда) ──────────────────────────────
   deploy-github:

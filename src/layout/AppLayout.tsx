@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import type { AppDispatch } from "../store";
-import { fetchTasks, addTask, updateTask, deleteTask, toggleTask, selectTasks } from "../store";
-import { Button, message, Typography, Segmented } from "antd";
+import { fetchTasks, addTask, updateTask, deleteTask, toggleTask, restoreFromArchive, selectTasks } from "../store";
+import { Button, message, Typography, Popconfirm } from "antd";
 import { SoundOutlined, AudioMutedOutlined, TeamOutlined, DownloadOutlined } from "@ant-design/icons";
-import BoardSection from "../components/Board/BoardSection";
 import ArchiveSection from "../components/Archive/ArchiveSection";
 import KanbanBoard from "../components/Kanban/KanbanBoard";
 import AssigneeManager from "../components/Assignees/AssigneeManager";
@@ -51,10 +50,10 @@ function buildReport(activeTasks: Task[], doneTasks: Task[]): string {
     const date = new Date(t.deadline).toLocaleDateString("ru", { day: "2-digit", month: "2-digit" });
     return `— ${name} · ${date}`;
   };
-  const free     = activeTasks.filter((t) => (t.status ?? "свободно") === "свободно");
-  const inWork   = activeTasks.filter((t) => t.status === "в_работе");
-  const waiting  = activeTasks.filter((t) => t.status === "waiting_comment");
-  const testing  = activeTasks.filter((t) => t.status === "тестирование");
+  const free    = activeTasks.filter((t) => (t.status ?? "свободно") === "свободно");
+  const inWork  = activeTasks.filter((t) => t.status === "в_работе");
+  const waiting = activeTasks.filter((t) => t.status === "waiting_comment");
+  const testing = activeTasks.filter((t) => t.status === "тестирование");
   const doneLines = doneTasks.map((t) => `— ${t.ticketNumber || t.title}`).join("\n");
   const sections: string[] = [];
   if (free.length)    sections.push(`На завтра.\n${free.map(label).join("\n")}`);
@@ -69,17 +68,16 @@ export default function AppLayout() {
   const tasks = useSelector(selectTasks);
 
   const activeTasks   = useMemo(() => tasks.filter((t) => !t.completed), [tasks]);
-  const doneTasks     = useMemo(() => tasks.filter((t) => t.completed && isToday(t.completedAt)), [tasks]);
+  const doneTasks     = useMemo(() => sortByScore(tasks.filter((t) => t.completed && isToday(t.completedAt))), [tasks]);
   const archivedTasks = useMemo(() => tasks.filter((t) => t.completed && !isToday(t.completedAt)), [tasks]);
 
   useEffect(() => { dispatch(fetchTasks()); }, [dispatch]);
 
   const { muted, toggleMuted } = useSoundSettings();
-  const [isEditorOpen, setIsEditorOpen]       = useState(false);
-  const [selectedTask, setSelectedTask]       = useState<Task | null>(null);
-  const [view, setView]                       = useState<"board" | "kanban">("board");
+  const [isEditorOpen, setIsEditorOpen]             = useState(false);
+  const [selectedTask, setSelectedTask]             = useState<Task | null>(null);
   const [assigneeManagerOpen, setAssigneeManagerOpen] = useState(false);
-  const [installPrompt, setInstallPrompt]     = useState<BeforeInstallPromptEvent | null>(null);
+  const [installPrompt, setInstallPrompt]           = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
     const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e as BeforeInstallPromptEvent); };
@@ -106,8 +104,9 @@ export default function AppLayout() {
   const today = new Date().toLocaleDateString("ru", { weekday: "long", day: "numeric", month: "long" });
 
   return (
-    <div style={{ maxWidth: 960, margin: "0 auto", padding: "32px 24px" }}>
-      <div style={{ marginBottom: 24, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}>
+      {/* Тулбар */}
+      <div style={{ marginBottom: 24, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <Text type="secondary" style={{ fontSize: 18, textTransform: "capitalize" }}>{today}</Text>
         <Button size="large" onClick={() => setIsEditorOpen(true)}>Добавить задачу +</Button>
         <Button size="large" icon={muted ? <AudioMutedOutlined /> : <SoundOutlined />} onClick={toggleMuted} title={muted ? "Включить звук" : "Выключить звук"} />
@@ -115,26 +114,62 @@ export default function AppLayout() {
         {installPrompt && (
           <Button size="large" icon={<DownloadOutlined />} onClick={handleInstall} title="Установить приложение" />
         )}
-        <Segmented
-          value={view}
-          onChange={(v) => setView(v as "board" | "kanban")}
-          options={[{ label: "Список", value: "board" }, { label: "Канбан", value: "kanban" }]}
-        />
       </div>
 
-      {view === "kanban" ? (
-        <div style={{ marginTop: 8, marginBottom: 32 }}>
-          <KanbanBoard onOpen={setSelectedTask} />
-        </div>
-      ) : (
-        <div style={{ marginTop: 8 }}>
-          <BoardSection title="Активные задачи" tasks={sortByScore(activeTasks)} onDelete={(id) => dispatch(deleteTask(id))} onToggle={(id) => dispatch(toggleTask(id))} onOpen={setSelectedTask} />
-          <BoardSection title="Выполнено сегодня" tasks={sortByScore(doneTasks)} onDelete={(id) => dispatch(deleteTask(id))} onToggle={(id) => dispatch(toggleTask(id))} onOpen={setSelectedTask} />
+      {/* Канбан */}
+      <KanbanBoard
+        onOpen={setSelectedTask}
+        onToggle={(id) => dispatch(toggleTask(id))}
+      />
+
+      {/* Выполнено сегодня */}
+      {doneTasks.length > 0 && (
+        <div style={{ marginTop: 32, marginBottom: 8 }}>
+          <Text style={{ fontSize: 15, fontWeight: 600, color: "#555", display: "block", marginBottom: 10 }}>
+            Выполнено сегодня ({doneTasks.length})
+          </Text>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {doneTasks.map((task) => (
+              <div
+                key={task.id}
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 10px", borderRadius: 6, background: "rgba(255,255,255,0.02)" }}
+              >
+                <Text type="secondary" style={{ fontSize: 13 }}>—</Text>
+                <Text
+                  style={{ fontSize: 14, flex: 1, cursor: "pointer", whiteSpace: "nowrap" }}
+                  onClick={() => setSelectedTask(task)}
+                >
+                  {task.ticketNumber || task.title}
+                </Text>
+                <Popconfirm
+                  title="Вернуть задачу в активные?"
+                  onConfirm={() => dispatch(restoreFromArchive(task.id))}
+                  okText="Да"
+                  cancelText="Нет"
+                >
+                  <Button type="text" size="small" style={{ color: "#555", fontSize: 12 }}>Вернуть</Button>
+                </Popconfirm>
+                <Popconfirm
+                  title="Удалить задачу?"
+                  onConfirm={() => dispatch(deleteTask(task.id))}
+                  okText="Удалить"
+                  cancelText="Отмена"
+                  okButtonProps={{ danger: true }}
+                >
+                  <Button type="text" size="small" danger style={{ fontSize: 12 }}>Удалить</Button>
+                </Popconfirm>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      <Button onClick={handleCopyReport} style={{ marginBottom: 32 }}>Скопировать отчёт</Button>
+      {/* Кнопка отчёта */}
+      <Button onClick={handleCopyReport} style={{ marginTop: 20, marginBottom: 32 }}>
+        Скопировать отчёт
+      </Button>
 
+      {/* Архив */}
       <ArchiveSection tasks={archivedTasks} />
 
       <AssigneeManager open={assigneeManagerOpen} onClose={() => setAssigneeManagerOpen(false)} />

@@ -26,6 +26,7 @@ interface KanbanColumnProps {
   status: TaskStatus;
   tasks: Task[];
   onOpen: (task: Task) => void;
+  onToggle: (id: string) => void;
   validity: ColumnValidity;
 }
 
@@ -35,7 +36,7 @@ const VALIDITY_STYLE: Record<Exclude<ColumnValidity, null>, React.CSSProperties>
   same:    { borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.02)" },
 };
 
-function KanbanColumn({ status, tasks, onOpen, validity }: KanbanColumnProps) {
+function KanbanColumn({ status, tasks, onOpen, onToggle, validity }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status, disabled: validity === "invalid" });
 
   const borderColor = validity
@@ -93,7 +94,7 @@ function KanbanColumn({ status, tasks, onOpen, validity }: KanbanColumnProps) {
         }}
       >
         {tasks.map((task) => (
-          <KanbanCard key={task.id} task={task} onOpen={onOpen} />
+          <KanbanCard key={task.id} task={task} onOpen={onOpen} onToggle={onToggle} />
         ))}
 
         {tasks.length === 0 && (
