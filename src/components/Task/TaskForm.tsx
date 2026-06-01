@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
 import { Input, Select, DatePicker, Typography, Button } from "antd";
 import type { TaskFormValues } from "../../types";
-import { readImageFiles, getImagesFromClipboard } from "../../utils";
-import { STATUS_OPTIONS, PRIORITY_OPTIONS } from "../../constants";
+import { isUrgentDeadline } from "../../utils";
+import { STATUS_OPTIONS, PRIORITY_OPTIONS, labelStyle, fieldStyle } from "../../constants";
 import { useAssignees } from "../../contexts";
+import { useScreenshotHandlers } from "../../hooks";
 import AssigneeManager from "../Assignees/AssigneeManager";
+import { useState } from "react";
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -15,33 +16,17 @@ interface TaskFormProps {
   errors?: Partial<Record<keyof TaskFormValues, string>>;
 }
 
-const labelStyle = { fontSize: 14, color: "#aaa", marginBottom: 4 };
-const fieldStyle = { display: "flex", flexDirection: "column" as const, gap: 4 };
-
 export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
   const { assignees } = useAssignees();
   const assigneeOptions = assignees.map((a) => ({ value: a, label: a }));
   const [managerOpen, setManagerOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const update = (field: keyof TaskFormValues, value: unknown) => {
+  const { fileInputRef, handlePaste, handleFileUpload } = useScreenshotHandlers(
+    (base64s) => onChange({ ...values, screenshots: [...values.screenshots, ...base64s] }),
+  );
+
+  const update = (field: keyof TaskFormValues, value: unknown) =>
     onChange({ ...values, [field]: value });
-  };
-
-  const addScreenshots = (base64s: string[]) => {
-    update("screenshots", [...values.screenshots, ...base64s]);
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    const files = getImagesFromClipboard(e);
-    if (files.length) readImageFiles(files, addScreenshots);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    readImageFiles(Array.from(e.target.files), addScreenshots);
-    e.target.value = "";
-  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -97,10 +82,7 @@ export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
             value={values.deadline}
             onChange={(val) => {
               const updates: Partial<TaskFormValues> = { deadline: val };
-              if (val) {
-                const diff = val.valueOf() - Date.now();
-                if (diff > 0 && diff <= 24 * 60 * 60 * 1000) updates.priority = "high";
-              }
+              if (isUrgentDeadline(val)) updates.priority = "high";
               onChange({ ...values, ...updates });
             }}
             showTime={{ format: "HH", hideDisabledOptions: true }}

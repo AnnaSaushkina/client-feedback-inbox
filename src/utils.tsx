@@ -1,4 +1,5 @@
 import React from "react";
+import type { Task } from "./types";
 
 // --- deadline ---
 
@@ -23,6 +24,30 @@ export const formatDeadline = (deadline?: string): string | null => {
     minute: "2-digit",
   });
 };
+
+export function isUrgentDeadline(val: { valueOf(): number } | null): boolean {
+  if (!val) return false;
+  const diff = val.valueOf() - Date.now();
+  return diff > 0 && diff <= 24 * 60 * 60 * 1000;
+}
+
+// --- task sorting ---
+
+const STATUS_SCORE: Record<string, number> = {
+  свободно: 0, тестирование: 1, в_работе: 2, waiting_comment: 3,
+};
+const PRIORITY_SCORE: Record<string, number> = { high: 0, low: 1 };
+
+export function getTaskScore(task: Task): number {
+  const status = STATUS_SCORE[task.status ?? "свободно"] ?? 2;
+  const priority = PRIORITY_SCORE[task.priority ?? "low"] ?? 1;
+  const diff = task.deadline ? new Date(task.deadline).getTime() - Date.now() : null;
+  const deadline = diff === null ? 50 : diff < 0 ? 0 : diff < 864e5 ? 1 : 2;
+  return status * 1000 + priority * 100 + deadline;
+}
+
+export const sortByScore = (tasks: Task[]): Task[] =>
+  [...tasks].sort((a, b) => getTaskScore(a) - getTaskScore(b));
 
 // --- links ---
 

@@ -1,19 +1,11 @@
-import { useState, useRef } from "react";
-import {
-  Modal,
-  Tag,
-  Image,
-  Button,
-  Input,
-  Select,
-  DatePicker,
-  Typography,
-} from "antd";
+import { useState } from "react";
+import { Modal, Tag, Image, Button, Input, Select, DatePicker, Typography } from "antd";
 import dayjs from "dayjs";
 import type { Task, Priority, TaskStatus } from "../../types";
-import { getDeadlineColor, formatDeadline, renderWithLinks, readImageFiles, getImagesFromClipboard } from "../../utils";
-import { STATUS_OPTIONS, PRIORITY_OPTIONS } from "../../constants";
+import { getDeadlineColor, formatDeadline, renderWithLinks, isUrgentDeadline } from "../../utils";
+import { STATUS_OPTIONS, PRIORITY_OPTIONS, labelStyle, fieldStyle } from "../../constants";
 import { useAssignees } from "../../contexts";
+import { useScreenshotHandlers } from "../../hooks";
 import AssigneeManager from "../Assignees/AssigneeManager";
 
 const { TextArea } = Input;
@@ -25,9 +17,6 @@ const priorityLabel: Record<string, string> = { low: "⚪ Низкий", high: "
 const DISABLED_HOURS = [0, 1, 2, 3, 4, 5, 6, 7, 23];
 const DISABLED_MINUTES = Array.from({ length: 60 }, (_, i) => i).filter((m) => m !== 0);
 
-const labelStyle = { fontSize: 14, color: "#aaa", marginBottom: 4 };
-const fieldStyle = { display: "flex", flexDirection: "column" as const, gap: 4 };
-
 interface TaskCardProps {
   task: Task | null;
   onClose: () => void;
@@ -38,20 +27,20 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
   const { assignees } = useAssignees();
   const assigneeOptions = assignees.map((a) => ({ value: a, label: a }));
   const [managerOpen, setManagerOpen] = useState(false);
-
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(task?.title ?? "");
   const [description, setDescription] = useState(task?.description ?? "");
   const [ticketNumber, setTicketNumber] = useState(task?.ticketNumber ?? "");
-  const [deadline, setDeadline] = useState<dayjs.Dayjs | null>(
-    task?.deadline ? dayjs(task.deadline) : null
-  );
+  const [deadline, setDeadline] = useState<dayjs.Dayjs | null>(task?.deadline ? dayjs(task.deadline) : null);
   const [status, setStatus] = useState<TaskStatus>(task?.status ?? "свободно");
   const [priority, setPriority] = useState<Priority | null>(task?.priority ?? null);
   const [assignee, setAssignee] = useState<string | null>(task?.assignee ?? null);
   const [screenshots, setScreenshots] = useState<string[]>(task?.screenshots ?? []);
   const [titleError, setTitleError] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { fileInputRef, handlePaste, handleFileUpload } = useScreenshotHandlers(
+    (base64s) => setScreenshots((prev) => [...prev, ...base64s]),
+  );
 
   if (!task) return null;
 
@@ -69,10 +58,7 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
   };
 
   const handleSave = () => {
-    if (!title.trim()) {
-      setTitleError("Название задачи обязательно");
-      return;
-    }
+    if (!title.trim()) { setTitleError("Название задачи обязательно"); return; }
     onSave({
       ...task,
       title: title.trim(),
@@ -86,17 +72,6 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
     });
     setIsEditing(false);
     setTitleError("");
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    const files = getImagesFromClipboard(e);
-    if (files.length) readImageFiles(files, (base64s) => setScreenshots((prev) => [...prev, ...base64s]));
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    readImageFiles(Array.from(e.target.files), (base64s) => setScreenshots((prev) => [...prev, ...base64s]));
-    e.target.value = "";
   };
 
   const taskStatus = task.status ?? "свободно";
@@ -163,10 +138,7 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
                 value={deadline}
                 onChange={(val) => {
                   setDeadline(val);
-                  if (val) {
-                    const diff = val.valueOf() - Date.now();
-                    if (diff > 0 && diff <= 24 * 60 * 60 * 1000) setPriority("high");
-                  }
+                  if (isUrgentDeadline(val)) setPriority("high");
                 }}
                 showTime={{
                   format: "HH",
@@ -220,24 +192,14 @@ export default function TaskCard({ task, onClose, onSave }: TaskCardProps) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            {task.ticketNumber && (
-              <Tag style={{ fontSize: 15, fontWeight: 600, padding: "3px 12px" }}>#{task.ticketNumber}</Tag>
-            )}
+            {task.ticketNumber && <Tag style={{ fontSize: 15, fontWeight: 600, padding: "3px 12px" }}>#{task.ticketNumber}</Tag>}
             {taskStatus === "свободно" && <Tag color="success" style={{ fontSize: 14 }}>🟢 Можно взять в работу</Tag>}
             {taskStatus === "в_работе" && <Tag color="processing" style={{ fontSize: 14 }}>🔵 В работе</Tag>}
             {taskStatus === "waiting_comment" && <Tag style={{ fontSize: 14 }}>💬 Ждём с ОС</Tag>}
             {taskStatus === "тестирование" && <Tag color="purple" style={{ fontSize: 14 }}>✅ Сделано. Тестируется</Tag>}
-            {task.priority && (
-              <Tag color={priorityColor[task.priority]} style={{ fontSize: 14 }}>
-                {priorityLabel[task.priority]}
-              </Tag>
-            )}
+            {task.priority && <Tag color={priorityColor[task.priority]} style={{ fontSize: 14 }}>{priorityLabel[task.priority]}</Tag>}
             {task.assignee && <Tag color="blue" style={{ fontSize: 14 }}>{task.assignee}</Tag>}
-            {task.deadline && (
-              <Tag color={getDeadlineColor(task.deadline)} style={{ fontSize: 14 }}>
-                ⏰ {formatDeadline(task.deadline)}
-              </Tag>
-            )}
+            {task.deadline && <Tag color={getDeadlineColor(task.deadline)} style={{ fontSize: 14 }}>⏰ {formatDeadline(task.deadline)}</Tag>}
           </div>
 
           {task.history && task.history.length > 0 ? (

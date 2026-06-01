@@ -155,7 +155,6 @@ const tasksSlice = createSlice({
 });
 
 export const selectTasks = (state: TasksRootState) => state.tasks.items;
-export const selectLoading = (state: TasksRootState) => state.tasks.loading;
 
 export const isTaskMutationAction = isAnyOf(
   addTask.fulfilled,
@@ -185,5 +184,4 @@ export const store = configureStore({
     getDefaultMiddleware().concat(localStorageMiddleware),
 });
 
-export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

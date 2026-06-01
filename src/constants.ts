@@ -1,5 +1,8 @@
 import type { TaskStatus } from "./types";
 
+export const labelStyle = { fontSize: 14, color: "#aaa", marginBottom: 4 };
+export const fieldStyle = { display: "flex", flexDirection: "column" as const, gap: 4 };
+
 export const STATUS_OPTIONS = [
   { value: "свободно", label: "🟢 Можно взять в работу" },
   { value: "в_работе", label: "🔵 В работе" },

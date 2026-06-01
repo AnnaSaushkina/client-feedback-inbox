@@ -5,6 +5,7 @@ import type { AppDispatch } from "./store";
 import { fetchTasks, USE_API, selectTasks } from "./store";
 import type { Task } from "./types";
 import { useSoundSettings } from "./contexts";
+import { readImageFiles, getImagesFromClipboard } from "./utils";
 
 // --- useSocket ---
 
@@ -88,4 +89,23 @@ export function useTaskSound() {
     });
     if (movedToTesting) playTesting();
   }, [tasks, muted]);
+}
+
+// --- useScreenshotHandlers ---
+
+export function useScreenshotHandlers(onAdd: (base64s: string[]) => void) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const files = getImagesFromClipboard(e);
+    if (files.length) readImageFiles(files, onAdd);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    readImageFiles(Array.from(e.target.files), onAdd);
+    e.target.value = "";
+  };
+
+  return { fileInputRef, handlePaste, handleFileUpload };
 }
