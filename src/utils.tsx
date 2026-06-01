@@ -38,7 +38,7 @@ const STATUS_SCORE: Record<string, number> = {
 };
 const PRIORITY_SCORE: Record<string, number> = { high: 0, low: 1 };
 
-export function getTaskScore(task: Task): number {
+function getTaskScore(task: Task): number {
   const status = STATUS_SCORE[task.status ?? "свободно"] ?? 2;
   const priority = PRIORITY_SCORE[task.priority ?? "low"] ?? 1;
   const diff = task.deadline ? new Date(task.deadline).getTime() - Date.now() : null;

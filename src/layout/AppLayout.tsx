@@ -2,9 +2,10 @@ import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import type { AppDispatch } from "../store";
 import { fetchTasks, addTask, updateTask, deleteTask, toggleTask, restoreFromArchive, selectTasks } from "../store";
-import { Button, message, Typography, Popconfirm } from "antd";
+import { Button, message, Typography } from "antd";
 import { SoundOutlined, AudioMutedOutlined, TeamOutlined, DownloadOutlined } from "@ant-design/icons";
 import ArchiveSection from "../components/Archive/ArchiveSection";
+import DoneSection from "../components/Archive/DoneSection";
 import KanbanBoard from "../components/Kanban/KanbanBoard";
 import AssigneeManager from "../components/Assignees/AssigneeManager";
 import type { Task } from "../types";
@@ -124,43 +125,13 @@ export default function AppLayout() {
 
       {/* Выполнено сегодня */}
       {doneTasks.length > 0 && (
-        <div style={{ marginTop: 32, marginBottom: 8 }}>
-          <Text style={{ fontSize: 15, fontWeight: 600, color: "#555", display: "block", marginBottom: 10 }}>
-            Выполнено сегодня ({doneTasks.length})
-          </Text>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {doneTasks.map((task) => (
-              <div
-                key={task.id}
-                style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 10px", borderRadius: 6, background: "rgba(255,255,255,0.02)" }}
-              >
-                <Text type="secondary" style={{ fontSize: 13 }}>—</Text>
-                <Text
-                  style={{ fontSize: 14, flex: 1, cursor: "pointer", whiteSpace: "nowrap" }}
-                  onClick={() => setSelectedTask(task)}
-                >
-                  {task.ticketNumber || task.title}
-                </Text>
-                <Popconfirm
-                  title="Вернуть задачу в активные?"
-                  onConfirm={() => dispatch(restoreFromArchive(task.id))}
-                  okText="Да"
-                  cancelText="Нет"
-                >
-                  <Button type="text" size="small" style={{ color: "#555", fontSize: 12 }}>Вернуть</Button>
-                </Popconfirm>
-                <Popconfirm
-                  title="Удалить задачу?"
-                  onConfirm={() => dispatch(deleteTask(task.id))}
-                  okText="Удалить"
-                  cancelText="Отмена"
-                  okButtonProps={{ danger: true }}
-                >
-                  <Button type="text" size="small" danger style={{ fontSize: 12 }}>Удалить</Button>
-                </Popconfirm>
-              </div>
-            ))}
-          </div>
+        <div style={{ marginTop: 32 }}>
+          <DoneSection
+            tasks={doneTasks}
+            onOpen={setSelectedTask}
+            onRestore={(id) => dispatch(restoreFromArchive(id))}
+            onDelete={(id) => dispatch(deleteTask(id))}
+          />
         </div>
       )}
 

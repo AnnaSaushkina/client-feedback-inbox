@@ -6,7 +6,7 @@ import * as api from "./api";
 export const USE_API = !!import.meta.env.VITE_API_URL;
 const STORAGE_KEY = "tasks";
 
-export function loadFromStorage(): Task[] {
+function loadFromStorage(): Task[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
@@ -15,7 +15,7 @@ export function loadFromStorage(): Task[] {
   }
 }
 
-export function saveToStorage(tasks: Task[]): void {
+function saveToStorage(tasks: Task[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
 }
 
@@ -156,7 +156,7 @@ const tasksSlice = createSlice({
 
 export const selectTasks = (state: TasksRootState) => state.tasks.items;
 
-export const isTaskMutationAction = isAnyOf(
+const isTaskMutationAction = isAnyOf(
   addTask.fulfilled,
   updateTask.fulfilled,
   deleteTask.fulfilled,
