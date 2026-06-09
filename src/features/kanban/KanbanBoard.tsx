@@ -16,11 +16,10 @@ import type { AppDispatch } from "../../store";
 import { selectTasks, updateTask } from "../../store";
 import type { Task, TaskStatus } from "../../types";
 import { isValidTransition, TRANSITION_BLOCK_REASON } from "../../constants";
+import { KANBAN_COLUMNS } from "./kanban.constants";
 import KanbanColumn from "./KanbanColumn";
 import type { ColumnValidity } from "./KanbanColumn";
 import KanbanCard from "./KanbanCard";
-
-const COLUMNS: TaskStatus[] = ["свободно", "в_работе", "waiting_comment", "тестирование"];
 
 interface KanbanBoardProps {
   onOpen: (task: Task) => void;
@@ -28,14 +27,19 @@ interface KanbanBoardProps {
   onDelete: (id: string) => void;
 }
 
-export default function KanbanBoard({ onOpen, onToggle, onDelete }: KanbanBoardProps) {
+export default function KanbanBoard({
+  onOpen,
+  onToggle,
+  onDelete,
+}: KanbanBoardProps) {
   const dispatch = useDispatch<AppDispatch>();
   const tasks = useSelector(selectTasks);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const [optimisticMove, setOptimisticMove] = useState<{ id: string | number; status: TaskStatus } | null>(null);
+  const [optimisticMove, setOptimisticMove] = useState<{
+    id: string | number;
+    status: TaskStatus;
+  } | null>(null);
 
-  // distance: 8 — перетаскивание начинается только после 8px движения, клики проходят насквозь
-  // TouchSensor: задержка 250ms перед началом перетаскивания на мобильных
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { distance: 8 } }),
@@ -44,9 +48,17 @@ export default function KanbanBoard({ onOpen, onToggle, onDelete }: KanbanBoardP
   const activeTasks = useMemo(() => tasks.filter((t) => !t.completed), [tasks]);
 
   const tasksByColumn = useMemo(() => {
-    const result: Record<TaskStatus, Task[]> = { свободно: [], в_работе: [], waiting_comment: [], тестирование: [] };
+    const result: Record<TaskStatus, Task[]> = {
+      свободно: [],
+      в_работе: [],
+      ожидание: [],
+      тестирование: [],
+    };
     for (const t of activeTasks) {
-      const status = optimisticMove?.id === t.id ? optimisticMove.status : (t.status ?? "свободно");
+      const status =
+        optimisticMove?.id === t.id
+          ? optimisticMove.status
+          : (t.status ?? "свободно");
       result[status].push(t);
     }
     return result;
@@ -63,18 +75,26 @@ export default function KanbanBoard({ onOpen, onToggle, onDelete }: KanbanBoardP
 
     const task = activeTasks.find((t) => t.id === active.id);
     const newStatus = over.id as TaskStatus;
-    if (!task || !COLUMNS.includes(newStatus) || task.status === newStatus) return;
+    if (
+      !task ||
+      !KANBAN_COLUMNS.includes(newStatus) ||
+      task.status === newStatus
+    )
+      return;
 
     const from = task.status ?? "свободно";
 
     if (!isValidTransition(from, newStatus)) {
-      const reason = TRANSITION_BLOCK_REASON[from]?.[newStatus] ?? "Этот переход недопустим";
+      const reason =
+        TRANSITION_BLOCK_REASON[from]?.[newStatus] ?? "Этот переход недопустим";
       message.error(reason, 3);
       return;
     }
 
     setOptimisticMove({ id: task.id, status: newStatus });
-    dispatch(updateTask({ ...task, status: newStatus })).finally(() => setOptimisticMove(null));
+    dispatch(updateTask({ ...task, status: newStatus })).finally(() =>
+      setOptimisticMove(null),
+    );
   };
 
   const columnValidity = (status: TaskStatus): ColumnValidity => {
@@ -92,7 +112,7 @@ export default function KanbanBoard({ onOpen, onToggle, onDelete }: KanbanBoardP
       onDragEnd={handleDragEnd}
     >
       <div className="kanban-board">
-        {COLUMNS.map((status) => (
+        {KANBAN_COLUMNS.map((status) => (
           <KanbanColumn
             key={status}
             status={status}
@@ -106,7 +126,14 @@ export default function KanbanBoard({ onOpen, onToggle, onDelete }: KanbanBoardP
       </div>
 
       <DragOverlay>
-        {activeTask && <KanbanCard task={activeTask} onOpen={onOpen} onToggle={onToggle} onDelete={onDelete} />}
+        {activeTask && (
+          <KanbanCard
+            task={activeTask}
+            onOpen={onOpen}
+            onToggle={onToggle}
+            onDelete={onDelete}
+          />
+        )}
       </DragOverlay>
     </DndContext>
   );

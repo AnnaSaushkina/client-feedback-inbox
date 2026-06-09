@@ -24,7 +24,11 @@ interface ArchiveItemProps {
   onDelete: (id: string) => void;
 }
 
-export default function ArchiveItem({ task, onRestore, onDelete }: ArchiveItemProps) {
+export default function ArchiveItem({
+  task,
+  onRestore,
+  onDelete,
+}: ArchiveItemProps) {
   return (
     <div
       style={{
@@ -38,7 +42,9 @@ export default function ArchiveItem({ task, onRestore, onDelete }: ArchiveItemPr
       }}
     >
       <div style={{ flex: 1, display: "flex", gap: 16 }}>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+        <div
+          style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Text style={{ fontSize: 16, fontWeight: 600 }}>{task.title}</Text>
             {task.ticketNumber && (
@@ -52,16 +58,38 @@ export default function ArchiveItem({ task, onRestore, onDelete }: ArchiveItemPr
           </div>
 
           {task.history && task.history.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+                marginTop: 4,
+              }}
+            >
               {task.history.map((entry, i) => (
-                <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                <div
+                  key={i}
+                  style={{ display: "flex", gap: 8, alignItems: "flex-start" }}
+                >
                   <Text
                     type="secondary"
-                    style={{ fontSize: 11, whiteSpace: "nowrap", marginTop: 2, minWidth: 80 }}
+                    style={{
+                      fontSize: 11,
+                      whiteSpace: "nowrap",
+                      marginTop: 2,
+                      minWidth: 80,
+                    }}
                   >
                     {formatShortDate(entry.date)}
                   </Text>
-                  <Text style={{ fontSize: 13, color: "#bbb", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: "#bbb",
+                      lineHeight: 1.5,
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
                     {renderWithLinks(entry.text)}
                   </Text>
                 </div>
@@ -78,7 +106,9 @@ export default function ArchiveItem({ task, onRestore, onDelete }: ArchiveItemPr
           okText="Да"
           cancelText="Нет"
         >
-          <Button type="text" size="small">Вернуть</Button>
+          <Button type="text" size="small">
+            Вернуть
+          </Button>
         </Popconfirm>
         <Popconfirm
           title="Удалить из архива?"
@@ -88,7 +118,13 @@ export default function ArchiveItem({ task, onRestore, onDelete }: ArchiveItemPr
           cancelText="Отмена"
           okButtonProps={{ danger: true }}
         >
-          <Button type="text" size="small" danger icon={<CloseOutlined />} style={{ padding: "0 4px" }} />
+          <Button
+            type="text"
+            size="small"
+            danger
+            icon={<CloseOutlined />}
+            style={{ padding: "0 4px" }}
+          />
         </Popconfirm>
       </div>
     </div>

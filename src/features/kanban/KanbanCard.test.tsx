@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { DndContext } from "@dnd-kit/core";
-import KanbanCard from "../components/Kanban/KanbanCard";
-import type { Task } from "../types";
+import KanbanCard from "./KanbanCard";
+import type { Task } from "../../types";
 
 const task: Task = {
   id: "1",
@@ -20,34 +20,31 @@ const defaultProps = {
   onDelete: vi.fn(),
 };
 
-// DndContext нужен потому что KanbanCard использует useDraggable внутри
-const wrap = (ui: React.ReactElement) => (
-  <DndContext>{ui}</DndContext>
-);
+const wrap = (ui: React.ReactElement) => <DndContext>{ui}</DndContext>;
 
 describe("KanbanCard", () => {
   it("показывает название задачи", () => {
     render(wrap(<KanbanCard {...defaultProps} />));
-    expect(screen.getByText("прод упал")).toBeInTheDocument();
+    expect(screen.getByText("прод упал")).toBeDefined();
   });
 
   it("показывает номер тикета", () => {
     render(wrap(<KanbanCard {...defaultProps} />));
-    expect(screen.getByText("#123")).toBeInTheDocument();
+    expect(screen.getByText("#123")).toBeDefined();
   });
 
   it("показывает тег высокого приоритета", () => {
     render(wrap(<KanbanCard {...defaultProps} />));
-    expect(screen.getByText("🔴 Высокий")).toBeInTheDocument();
+    expect(screen.getByText("🔴 Высокий")).toBeDefined();
   });
 
   it("показывает кнопку выполнения ✓", () => {
     render(wrap(<KanbanCard {...defaultProps} />));
-    expect(screen.getByTitle("Выполнено")).toBeInTheDocument();
+    expect(screen.getByTitle("Выполнено")).toBeDefined();
   });
 
   it("показывает исполнителя", () => {
     render(wrap(<KanbanCard {...defaultProps} />));
-    expect(screen.getByText("Аня")).toBeInTheDocument();
+    expect(screen.getByText("Аня")).toBeDefined();
   });
 });

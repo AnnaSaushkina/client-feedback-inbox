@@ -9,14 +9,12 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Планшет: колонки сужаются, но остаются в ряд */
 @media (max-width: 900px) {
   .kanban-board {
     gap: 10px;
   }
 }
 
-/* Мобильные: колонки складываются вертикально */
 @media (max-width: 640px) {
   .kanban-board {
     flex-direction: column;

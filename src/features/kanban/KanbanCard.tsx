@@ -14,7 +14,9 @@ interface KanbanCardProps {
 }
 
 function KanbanCard({ task, onOpen, onToggle, onDelete }: KanbanCardProps) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: task.id,
+  });
 
   const menu = {
     items: [
@@ -64,11 +66,22 @@ function KanbanCard({ task, onOpen, onToggle, onDelete }: KanbanCardProps) {
           transition: "border-color 0.15s",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
-          <Text style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.4 }}>{task.title}</Text>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 6,
+          }}
+        >
+          <Text style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.4 }}>
+            {task.title}
+          </Text>
 
-          <div style={{ display: "flex", gap: 4, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
-            {/* Кнопка выполнить */}
+          <div
+            style={{ display: "flex", gap: 4, flexShrink: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <Popconfirm
               title="Отметить как выполненную?"
               onConfirm={() => onToggle(task.id)}
@@ -91,11 +104,13 @@ function KanbanCard({ task, onOpen, onToggle, onDelete }: KanbanCardProps) {
                   transition: "border-color 0.15s, color 0.15s",
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLSpanElement).style.borderColor = "#52c41a";
+                  (e.currentTarget as HTMLSpanElement).style.borderColor =
+                    "#52c41a";
                   (e.currentTarget as HTMLSpanElement).style.color = "#52c41a";
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLSpanElement).style.borderColor = "#555";
+                  (e.currentTarget as HTMLSpanElement).style.borderColor =
+                    "#555";
                   (e.currentTarget as HTMLSpanElement).style.color = "#666";
                 }}
               >
@@ -103,7 +118,6 @@ function KanbanCard({ task, onOpen, onToggle, onDelete }: KanbanCardProps) {
               </span>
             </Popconfirm>
 
-            {/* Меню ⋯ */}
             <Dropdown menu={menu} trigger={["click"]} placement="bottomRight">
               <span
                 title="Настройки"
@@ -120,8 +134,12 @@ function KanbanCard({ task, onOpen, onToggle, onDelete }: KanbanCardProps) {
                   lineHeight: 1,
                   transition: "color 0.15s",
                 }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLSpanElement).style.color = "#aaa")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLSpanElement).style.color = "#444")}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget as HTMLSpanElement).style.color = "#aaa")
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLSpanElement).style.color = "#444")
+                }
               >
                 ⋯
               </span>
@@ -134,15 +152,22 @@ function KanbanCard({ task, onOpen, onToggle, onDelete }: KanbanCardProps) {
             <Tag style={{ fontSize: 11, margin: 0 }}>#{task.ticketNumber}</Tag>
           )}
           {task.priority === "high" && (
-            <Tag color="red" style={{ fontSize: 11, margin: 0 }}>🔴 Высокий</Tag>
+            <Tag color="red" style={{ fontSize: 11, margin: 0 }}>
+              🔴 Высокий
+            </Tag>
           )}
           {task.deadline && (
-            <Tag color={getDeadlineColor(task.deadline)} style={{ fontSize: 11, margin: 0 }}>
+            <Tag
+              color={getDeadlineColor(task.deadline)}
+              style={{ fontSize: 11, margin: 0 }}
+            >
               ⏰ {formatDeadline(task.deadline)}
             </Tag>
           )}
           {task.assignee && (
-            <Tag color="blue" style={{ fontSize: 11, margin: 0 }}>{task.assignee}</Tag>
+            <Tag color="blue" style={{ fontSize: 11, margin: 0 }}>
+              {task.assignee}
+            </Tag>
           )}
         </div>
       </div>

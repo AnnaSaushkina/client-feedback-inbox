@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 
 export type Priority = "low" | "high";
 export type Assignee = string;
-export type TaskStatus = "свободно" | "в_работе" | "waiting_comment" | "тестирование";
+export type TaskStatus = "свободно" | "в_работе" | "ожидание" | "тестирование";
 
 export interface HistoryEntry {
   text: string;

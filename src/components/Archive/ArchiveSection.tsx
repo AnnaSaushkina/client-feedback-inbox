@@ -19,7 +19,11 @@ export default function ArchiveSection({ tasks }: ArchiveSectionProps) {
     () =>
       tasks.reduce<Record<string, Task[]>>((acc, task) => {
         const key = task.completedAt
-          ? new Date(task.completedAt).toLocaleDateString("ru", { day: "2-digit", month: "2-digit", year: "numeric" })
+          ? new Date(task.completedAt).toLocaleDateString("ru", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            })
           : "Без даты";
         if (!acc[key]) acc[key] = [];
         acc[key].push(task);
@@ -49,7 +53,11 @@ export default function ArchiveSection({ tasks }: ArchiveSectionProps) {
                   <Card
                     key={date}
                     size="small"
-                    title={<Text type="secondary" style={{ fontSize: 13 }}>{date}</Text>}
+                    title={
+                      <Text type="secondary" style={{ fontSize: 13 }}>
+                        {date}
+                      </Text>
+                    }
                     styles={{ header: { minHeight: 36 } }}
                   >
                     {dateTasks.map((task) => (

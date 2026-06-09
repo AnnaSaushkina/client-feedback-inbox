@@ -5,6 +5,7 @@ import type { Task } from "./types";
 
 const HOURS_IN_DAY = 24;
 const MS_IN_HOUR = 1000 * 60 * 60;
+const MS_IN_DAY = MS_IN_HOUR * HOURS_IN_DAY;
 
 export const getDeadlineColor = (deadline?: string): string => {
   if (!deadline) return "purple";
@@ -34,16 +35,25 @@ export function isUrgentDeadline(val: { valueOf(): number } | null): boolean {
 // --- task sorting ---
 
 const STATUS_SCORE: Record<string, number> = {
-  свободно: 0, тестирование: 1, в_работе: 2, waiting_comment: 3,
+  свободно: 0,
+  тестирование: 1,
+  в_работе: 2,
+  ожидание: 3,
 };
 const PRIORITY_SCORE: Record<string, number> = { high: 0, low: 1 };
+
+function getDeadlineScore(deadline?: string): number {
+  if (!deadline) return 50;
+  const diff = new Date(deadline).getTime() - Date.now();
+  if (diff < 0) return 0;
+  if (diff < MS_IN_DAY) return 1;
+  return 2;
+}
 
 function getTaskScore(task: Task): number {
   const status = STATUS_SCORE[task.status ?? "свободно"] ?? 2;
   const priority = PRIORITY_SCORE[task.priority ?? "low"] ?? 1;
-  const diff = task.deadline ? new Date(task.deadline).getTime() - Date.now() : null;
-  const deadline = diff === null ? 50 : diff < 0 ? 0 : diff < 864e5 ? 1 : 2;
-  return status * 1000 + priority * 100 + deadline;
+  return status * 1000 + priority * 100 + getDeadlineScore(task.deadline);
 }
 
 export const sortByScore = (tasks: Task[]): Task[] =>
@@ -66,7 +76,7 @@ export function renderWithLinks(text: string): React.ReactNode[] {
     try {
       shortText = new URL(url).hostname.replace(/^www\./, "");
     } catch {
-      // невалидный URL — оставляем полный текст
+      // невалидный URL  оставляем полный текст
     }
     parts.push(
       <a
@@ -94,7 +104,10 @@ export function renderWithLinks(text: string): React.ReactNode[] {
 
 const IMAGE_EXTENSIONS = /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?|avif)$/i;
 
-export function readImageFiles(files: File[], onReady: (base64s: string[]) => void): void {
+export function readImageFiles(
+  files: File[],
+  onReady: (base64s: string[]) => void,
+): void {
   const imageFiles = files.filter(
     (f) => f.type.startsWith("image/") || IMAGE_EXTENSIONS.test(f.name),
   );

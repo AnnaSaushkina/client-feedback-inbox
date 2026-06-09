@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Modal } from "antd";
-import type { Task } from "../../types";
-import { type TaskFormValues, emptyForm } from "../../types";
+import type { Task, TaskFormValues } from "../../types";
+import { emptyForm } from "../../types";
 import TaskForm from "./TaskForm";
 
 interface TaskEditorProps {
@@ -21,12 +21,10 @@ export default function TaskEditor({
   >({});
 
   const validate = (): boolean => {
-    const newErrors: Partial<Record<keyof TaskFormValues, string>> = {};
-    if (!form.title.trim()) {
-      newErrors.title = "Название задачи обязательно";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const next: Partial<Record<keyof TaskFormValues, string>> = {};
+    if (!form.title.trim()) next.title = "Название задачи обязательно";
+    setErrors(next);
+    return Object.keys(next).length === 0;
   };
 
   const handleOk = () => {

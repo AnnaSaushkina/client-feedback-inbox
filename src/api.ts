@@ -30,9 +30,9 @@ export const updateTask = (task: Task): Promise<Task> =>
   }).then(parseResponse<Task>);
 
 export const deleteTask = (id: string): Promise<void> =>
-  fetch(`${API_URL}/tasks/${id}`, { method: "DELETE", headers }).then((res) => {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  });
+  fetch(`${API_URL}/tasks/${id}`, { method: "DELETE", headers })
+    .then(parseResponse<unknown>)
+    .then(() => undefined);
 
 export const toggleTask = (id: string): Promise<Task> =>
   fetch(`${API_URL}/tasks/${id}/toggle`, {

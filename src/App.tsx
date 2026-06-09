@@ -51,11 +51,18 @@ function PasswordGate({ children }: { children: React.ReactNode }) {
           onPressEnter={submit}
         />
         {error && (
-          <Typography.Text type="danger" style={{ display: "block", marginTop: 8 }}>
+          <Typography.Text
+            type="danger"
+            style={{ display: "block", marginTop: 8 }}
+          >
             Неверный пароль
           </Typography.Text>
         )}
-        <Button type="primary" onClick={submit} style={{ marginTop: 12, width: "100%" }}>
+        <Button
+          type="primary"
+          onClick={submit}
+          style={{ marginTop: 12, width: "100%" }}
+        >
           Войти
         </Button>
       </Card>

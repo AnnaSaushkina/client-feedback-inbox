@@ -9,7 +9,10 @@ interface AssigneeManagerProps {
   onClose: () => void;
 }
 
-export default function AssigneeManager({ open, onClose }: AssigneeManagerProps) {
+export default function AssigneeManager({
+  open,
+  onClose,
+}: AssigneeManagerProps) {
   const { assignees, add, rename, remove } = useAssignees();
   const [editingName, setEditingName] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -38,9 +41,19 @@ export default function AssigneeManager({ open, onClose }: AssigneeManagerProps)
       footer={<Button onClick={onClose}>Закрыть</Button>}
       width={400}
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          marginBottom: 16,
+        }}
+      >
         {assignees.map((name) => (
-          <div key={name} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div
+            key={name}
+            style={{ display: "flex", alignItems: "center", gap: 8 }}
+          >
             {editingName === name ? (
               <>
                 <Input
