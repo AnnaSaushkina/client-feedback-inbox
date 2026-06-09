@@ -159,10 +159,7 @@ function KanbanCard({ task, onOpen, onToggle, onDelete }: KanbanCardProps) {
             </Tag>
           )}
           {task.deadline && (
-            <Tag
-              color={getDeadlineColor(task.deadline)}
-              style={tagStyle}
-            >
+            <Tag color={getDeadlineColor(task.deadline)} style={tagStyle}>
               ⏰ {formatDeadline(task.deadline)}
             </Tag>
           )}
