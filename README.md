@@ -24,17 +24,6 @@ server/                  # Express + SQLite бэкенд
 scripts/                 # deploy.sh - ручной деплой на VPS
 ```
 
-### Назначение файлов
-
-| Файл                                  | Что хранит                                 |
-| ------------------------------------- | ------------------------------------------ |
-| `src/types.ts`                        | Все типы проекта                           |
-| `src/store/tasksThunks.ts`            | Все API-вызовы и мутации задач             |
-| `src/features/tasks/TaskEditor.tsx`   | Модалка создания/редактирования задачи     |
-| `src/features/kanban/KanbanBoard.tsx` | Канбан                                     |
-| `src/hooks/useSocket.ts`              | WebSocket-подписка на изменения от сервера |
-| `server/index.ts`                     | Express-сервер                             |
-
 ## Локальный запуск
 
 ```bash
