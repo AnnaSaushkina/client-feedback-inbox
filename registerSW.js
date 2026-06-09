@@ -1,1 +1,0 @@
-if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/client-feedback-inbox/sw.js', { scope: '/client-feedback-inbox/' })})}
