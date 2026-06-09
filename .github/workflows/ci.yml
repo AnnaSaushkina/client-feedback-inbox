@@ -70,7 +70,7 @@ jobs:
       # --- Сервер ---
       - name: Build server
         run: |
-          cd server && pnpm install --frozen-lockfile && pnpm run build
+          (cd server && pnpm install --frozen-lockfile && pnpm run build)
           tar -czf server-update.tar.gz -C server dist package.json
 
       - name: Upload server
