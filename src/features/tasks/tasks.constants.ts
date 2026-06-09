@@ -17,6 +17,7 @@ export const fieldStyle = {
   gap: 4,
 };
 export const rowStyle = { display: "flex", gap: 12 };
+export const fieldStyleFlex = { ...fieldStyle, flex: 1 };
 
 export const screenshotZoneStyle = {
   border: "1px dashed #444",

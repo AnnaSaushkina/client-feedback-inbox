@@ -6,6 +6,8 @@ import { getDeadlineColor, formatDeadline } from "../../utils";
 
 const { Text } = Typography;
 
+const tagStyle = { fontSize: 11, margin: 0 };
+
 interface KanbanCardProps {
   task: Task;
   onOpen: (task: Task) => void;
@@ -149,23 +151,23 @@ function KanbanCard({ task, onOpen, onToggle, onDelete }: KanbanCardProps) {
 
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
           {task.ticketNumber && (
-            <Tag style={{ fontSize: 11, margin: 0 }}>#{task.ticketNumber}</Tag>
+            <Tag style={tagStyle}>#{task.ticketNumber}</Tag>
           )}
           {task.priority === "high" && (
-            <Tag color="red" style={{ fontSize: 11, margin: 0 }}>
+            <Tag color="red" style={tagStyle}>
               🔴 Высокий
             </Tag>
           )}
           {task.deadline && (
             <Tag
               color={getDeadlineColor(task.deadline)}
-              style={{ fontSize: 11, margin: 0 }}
+              style={tagStyle}
             >
               ⏰ {formatDeadline(task.deadline)}
             </Tag>
           )}
           {task.assignee && (
-            <Tag color="blue" style={{ fontSize: 11, margin: 0 }}>
+            <Tag color="blue" style={tagStyle}>
               {task.assignee}
             </Tag>
           )}

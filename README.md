@@ -2,27 +2,38 @@
 
 Система управления задачами с канбан-доской, drag-and-drop и WebSocket-синхронизацией.
 
-**Стек:** React 19 · TypeScript · Vite · Redux Toolkit · Ant Design · Express · SQLite · Socket.IO · dnd-kit · dayjs · PWA (Workbox) · PM2
+**Стек:** React 19 · TypeScript · Vite · Redux Toolkit · Ant Design · Express · SQLite
 
-## Структура проекта
+## Архитектура
 
 ```
 src/
 ├── features/
 │   ├── kanban/          # Канбан-доска: колонки, карточки, drag-and-drop
-│   └── tasks/           # Задачи: форма, просмотр, Redux slice/thunks, отчёт
+│   └── tasks/           # Форма задачи, просмотр, константы
 ├── components/
-│   ├── Archive/         # Архив и секция «Выполнено сегодня»
+│   ├── Archive/         # Архив и секция "Выполнено сегодня"
 │   └── Assignees/       # Управление исполнителями
-├── store/               # Redux: configureStore, localStorage middleware
-├── hooks/               # useSocket, useTaskSound, useInstallPrompt и др.
-├── contexts/            # Sound и Assignees провайдеры
-├── layout/              # AppLayout — корневой компонент страницы
+├── store/               # Redux: slice, thunks, middleware для localStorage
+├── hooks/               # Глобальные хуки (WebSocket, звук)
+├── contexts/            # Провайдеры звука и исполнителей
+├── layout/              # AppLayout - корневой UI-компонент
 └── types.ts / utils.tsx / constants.ts / api.ts
 
 server/                  # Express + SQLite бэкенд
-scripts/                 # deploy.sh — ручной деплой на VPS
+scripts/                 # deploy.sh - ручной деплой на VPS
 ```
+
+### Назначение файлов
+
+| Файл                                  | Что хранит                                 |
+| ------------------------------------- | ------------------------------------------ |
+| `src/types.ts`                        | Все типы проекта                           |
+| `src/store/tasksThunks.ts`            | Все API-вызовы и мутации задач             |
+| `src/features/tasks/TaskEditor.tsx`   | Модалка создания/редактирования задачи     |
+| `src/features/kanban/KanbanBoard.tsx` | Канбан                                     |
+| `src/hooks/useSocket.ts`              | WebSocket-подписка на изменения от сервера |
+| `server/index.ts`                     | Express-сервер                             |
 
 ## Локальный запуск
 
@@ -43,7 +54,5 @@ VITE_API_URL=http://localhost:3000 pnpm dev
 
 ```bash
 pnpm test      # unit-тесты (Vitest)
-pnpm lint      # ESLint + Prettier check
-pnpm format    # авто-форматирование src/
 pnpm build     # production сборка
 ```

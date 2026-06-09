@@ -15,7 +15,6 @@ import {
   SoundOutlined,
   AudioMutedOutlined,
   TeamOutlined,
-  DownloadOutlined,
 } from "@ant-design/icons";
 import ArchiveSection from "../components/Archive/ArchiveSection";
 import DoneSection from "../components/Archive/DoneSection";
@@ -23,7 +22,6 @@ import KanbanBoard from "../features/kanban/KanbanBoard";
 import AssigneeManager from "../components/Assignees/AssigneeManager";
 import type { Task } from "../types";
 import { useSoundSettings } from "../contexts";
-import { useInstallPrompt } from "../hooks";
 import { sortByScore } from "../utils";
 import { buildReport } from "../features/tasks/report";
 
@@ -58,8 +56,6 @@ export default function AppLayout() {
   const dispatch = useDispatch<AppDispatch>();
   const tasks = useSelector(selectTasks);
   const { muted, toggleMuted } = useSoundSettings();
-  const { canInstall, handleInstall } = useInstallPrompt();
-
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [assigneeManagerOpen, setAssigneeManagerOpen] = useState(false);
@@ -126,14 +122,6 @@ export default function AppLayout() {
           onClick={() => setAssigneeManagerOpen(true)}
           title="Управление исполнителями"
         />
-        {canInstall && (
-          <Button
-            size="large"
-            icon={<DownloadOutlined />}
-            onClick={handleInstall}
-            title="Установить приложение"
-          />
-        )}
       </div>
 
       <KanbanBoard

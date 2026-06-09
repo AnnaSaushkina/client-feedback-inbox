@@ -15,6 +15,8 @@ const STATUS_TAG: Record<string, { color?: string; label: string }> = {
   тестирование: { color: "purple", label: "✅ Сделано. Тестируется" },
 };
 
+const tagStyle = { fontSize: 14 };
+
 interface TaskStatusProps {
   task: Task;
 }
@@ -38,22 +40,22 @@ export default function TaskStatus({ task }: TaskStatusProps) {
         </Tag>
       )}
       {statusTag && (
-        <Tag color={statusTag.color} style={{ fontSize: 14 }}>
+        <Tag color={statusTag.color} style={tagStyle}>
           {statusTag.label}
         </Tag>
       )}
       {task.priority && (
-        <Tag color={PRIORITY_COLOR[task.priority]} style={{ fontSize: 14 }}>
+        <Tag color={PRIORITY_COLOR[task.priority]} style={tagStyle}>
           {PRIORITY_LABEL[task.priority]}
         </Tag>
       )}
       {task.assignee && (
-        <Tag color="blue" style={{ fontSize: 14 }}>
+        <Tag color="blue" style={tagStyle}>
           {task.assignee}
         </Tag>
       )}
       {task.deadline && (
-        <Tag color={getDeadlineColor(task.deadline)} style={{ fontSize: 14 }}>
+        <Tag color={getDeadlineColor(task.deadline)} style={tagStyle}>
           ⏰ {formatDeadline(task.deadline)}
         </Tag>
       )}

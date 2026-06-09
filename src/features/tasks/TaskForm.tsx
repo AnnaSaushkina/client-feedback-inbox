@@ -7,6 +7,7 @@ import {
   PRIORITY_OPTIONS,
   labelStyle,
   fieldStyle,
+  fieldStyleFlex,
   rowStyle,
 } from "./tasks.constants";
 import { useAssignees } from "../../contexts";
@@ -83,7 +84,7 @@ export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
       </div>
 
       <div style={rowStyle}>
-        <div style={{ ...fieldStyle, flex: 1 }}>
+        <div style={fieldStyleFlex}>
           <Text style={labelStyle}>Статус</Text>
           <Select
             value={values.status}
@@ -92,7 +93,7 @@ export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
             size="large"
           />
         </div>
-        <div style={{ ...fieldStyle, flex: 1 }}>
+        <div style={fieldStyleFlex}>
           <Text style={labelStyle}>Приоритет</Text>
           <Select
             value={values.priority}
@@ -106,7 +107,7 @@ export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
       </div>
 
       <div style={rowStyle}>
-        <div style={{ ...fieldStyle, flex: 1 }}>
+        <div style={fieldStyleFlex}>
           <Text style={labelStyle}>Дедлайн</Text>
           <DatePicker
             value={values.deadline}
@@ -118,7 +119,7 @@ export default function TaskForm({ values, onChange, errors }: TaskFormProps) {
             size="large"
           />
         </div>
-        <div style={{ ...fieldStyle, flex: 1 }}>
+        <div style={fieldStyleFlex}>
           <div
             style={{
               display: "flex",
